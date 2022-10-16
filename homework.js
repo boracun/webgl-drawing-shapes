@@ -106,9 +106,9 @@ window.onload = function init() {
     canvas.addEventListener("mousedown", function(event){
 	
 		// If an object is wanted to be selected
-		if ( controlIndex == MOVE_OBJECT | controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
+		if ( controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
 		{
-			// Obtain the location
+			// Obtain the location of the mouse
 			t  = vec2(2*event.clientX/canvas.width-1, 
 			   2*(canvas.height-event.clientY)/canvas.height-1);
 			   
@@ -117,7 +117,7 @@ window.onload = function init() {
 		}
 
 		// If an object is wanted to be created
-		else if ( controlIndex == DRAW_RECTANGLE | controlIndex == DRAW_TRIANGLE | controlIndex == CREATE_POLYGON) {
+		else if ( controlIndex == CREATE_POLYGON) {
 			// If only the first vertex of the polygon/shape is determined
 			if (!polygonStart)
 			{
@@ -152,20 +152,23 @@ window.onload = function init() {
 			gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
 			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
 			
-			// If a polygon is drawn
-			if (controlIndex == CREATE_POLYGON) {
 			// Increasing the count of vertices corresponding to the current polygon
-				numIndices[numPolygons-1]++;
-				index++;
+			numIndices[numPolygons-1]++;
+			index++;
 				
-				render();
-			}
-			
+			render();
 			
 		}
 			
     } );
 
+	// Used only for moving an object
+	//canvas.addEventListener("mousemove", function(event){
+		//if ( controlIndex == MOVE_OBJECT )
+		//{}
+      //}
+
+    //} );
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
