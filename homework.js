@@ -18,6 +18,19 @@ var start = [0];
 
 var polygonStart = false;
 
+var DRAW_RECTANGLE = 0;
+var DRAW_TRIANGLE = 1;
+var CREATE_POLYGON = 2;
+var MOVE_OBJECT = 3;
+var REMOVE_OBJECT = 4;
+var ROTATE_OBJECT = 5;
+var UNDO = 6;
+var REDO = 7;
+var ZOOM = 8;
+var SAVE_SCENE = 9;
+var LOAD_SCENE = 10;
+
+//varying vec4 color;
 
 // 8 predefined colors
 var colors = [
@@ -53,8 +66,8 @@ window.onload = function init() {
     
 	var a = document.getElementById("Button1")
     a.addEventListener("click", function(){
-		// If the create polygon button is selected, then draw the polygon
-		if (controlIndex == 2) {
+		// If the button is clicked, then end the polygon drawing process
+		if (polygonStart) {
 			numIndices[numPolygons] = 0;
 			start[numPolygons] = index;
 			polygonStart = false;
@@ -62,67 +75,79 @@ window.onload = function init() {
 		}
     });
 
+	// The drawing process of a polygon was not done but another option is chosen
+	if (controlIndex != CREATE_POLYGON && polygonStart) {
+		// Remove the last elements from the polygon array if any other option is chosen
+		// Decrease the index so that the last vertices do not count
+		index -= numIndices[numPolygons-1];
+				
+		// Assign the count of vertices of the last polygon to 0
+		numIndices[numPolygons-1] = 0;
+				
+		// Decrease the number of polygons
+		numPolygons--;
+		polygonStart = false;
+	}
+			
     canvas.addEventListener("mousedown", function(event){
-		// If only the first vertex of the polygon/shape is determined
-		if (!polygonStart)
+	
+		// If an object is wanted to be selected
+		if ( controlIndex == MOVE_OBJECT | controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
 		{
-			numPolygons++;
-			polygonStart = true;
+			// Obtain the location
+			t  = vec2(2*event.clientX/canvas.width-1, 
+			   2*(canvas.height-event.clientY)/canvas.height-1);
+			   
+			 //gl.readPixels(t, canvas.width, canvas.height, gl.RGBA, );
 			
-			// Obtain the color of the index
-			c = vec4(colors[colorIndex]);
 		}
-		
-		// Bind the color buffer to send color data to GPU
-        gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
-		
-		// Obtain the vertex
-        t  = vec2(2*event.clientX/canvas.width-1, 
-           2*(canvas.height-event.clientY)/canvas.height-1);
-		
-		// Bind the vertex buffer to send vertex data to GPU
-        gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-        gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 
-		
-        
-		
-		
+		// If an object is wanted to be created
+		else if ( controlIndex == DRAW_RECTANGLE | controlIndex == DRAW_TRIANGLE | controlIndex == CREATE_POLYGON) {
+			// If only the first vertex of the polygon/shape is determined
+			if (!polygonStart)
+			{
+				numPolygons++;
+				polygonStart = true;
+				
+				// Obtain the color of the index
+				c = vec4(colors[colorIndex]);
+			}
+			
+			// Bind the color buffer to send color data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
+			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
+			
+			// Obtain the vertex
+			t  = vec2(2*event.clientX/canvas.width-1, 
+			   2*(canvas.height-event.clientY)/canvas.height-1);
+			
+			// Bind the vertex buffer to send vertex data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 
-		// Create a color for the depth buffer
-		var certainty = 0.1;
-		var colorCount = 1 + certainty;
-		var red = (numPolygons - 1) * certainty;
-		var green = Math.floor( red / colorCount ) * certainty;
-		var blue = Math.floor( green / colorCount ) * certainty;
-        t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
-		
-		// Bind the depth buffer to send color data to GPU
-		gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
-		
-		// If a polygon is drawn
-		if (controlIndex == 2) {
-		// Increasing the count of vertices corresponding to the current polygon
-			numIndices[numPolygons-1]++;
-			index++;
+			// Create a color for the depth buffer
+			var certainty = 0.1;
+			var colorCount = 1 + certainty;
+			var red = (numPolygons - 1) * certainty;
+			var green = Math.floor( red / colorCount ) * certainty;
+			var blue = Math.floor( green / colorCount ) * certainty;
+			t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
 			
-			render();
-		}
-		
-		// A polygon was drawn but another option is chosen
-		if (controlIndex != 2 && polygonStart) {
-			// Remove the last elements from the polygon array if any other option is chosen
-			// Decrease the index so that the last vertices do not count
-			index -= numIndices[numPolygons-1];
+			// Bind the depth buffer to send color data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
+			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
 			
-			// Assign the count of vertices of the last polygon to 0
-			numIndices[numPolygons-1] = 0;
+			// If a polygon is drawn
+			if (controlIndex == CREATE_POLYGON) {
+			// Increasing the count of vertices corresponding to the current polygon
+				numIndices[numPolygons-1]++;
+				index++;
+				
+				render();
+			}
 			
-			// Decrease the number of polygons
-			numPolygons--;
-			polygonStart = false;
+			
 		}
 			
     } );
