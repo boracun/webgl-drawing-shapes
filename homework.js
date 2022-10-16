@@ -10,6 +10,7 @@ var controlIndex = 0;
 var colorIndex = 0;
 
 var t;
+var c;
 var numPolygons = 0;
 var numIndices = [];
 numIndices[0] = 0;
@@ -67,7 +68,14 @@ window.onload = function init() {
 		{
 			numPolygons++;
 			polygonStart = true;
+			
+			// Obtain the color of the index
+			c = vec4(colors[colorIndex]);
 		}
+		
+		// Bind the color buffer to send color data to GPU
+        gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
+        gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
 		
 		// Obtain the vertex
         t  = vec2(2*event.clientX/canvas.width-1, 
@@ -77,22 +85,18 @@ window.onload = function init() {
         gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
         gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 
-		// Obtain the color of the index
-        //t = vec4(colors[colorIndex]);
 		
+        
+		
+		
+
+		// Create a color for the depth buffer
 		var certainty = 0.1;
 		var colorCount = 1 + certainty;
 		var red = (numPolygons - 1) * certainty;
 		var green = Math.floor( red / colorCount ) * certainty;
 		var blue = Math.floor( green / colorCount ) * certainty;
         t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
-		
-		// Bind the color buffer to send color data to GPU
-        gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
-
-		// Create a color for the depth buffer
-		t = vec4( ((numPolygons - 1)*0.1)%1.1, 0.0, 0.0, 1.0);
 		
 		// Bind the depth buffer to send color data to GPU
 		gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
