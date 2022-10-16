@@ -17,6 +17,7 @@ var start = [0];
 
 var polygonStart = false;
 
+
 // 8 predefined colors
 var colors = [
 	vec4( 0.0, 0.0, 0.0, 1.0 ), // black
@@ -61,7 +62,7 @@ window.onload = function init() {
     });
 
     canvas.addEventListener("mousedown", function(event){
-		// If only the first vertex of the polygon is determined
+		// If only the first vertex of the polygon/shape is determined
 		if (!polygonStart)
 		{
 			numPolygons++;
@@ -77,12 +78,27 @@ window.onload = function init() {
         gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 
 		// Obtain the color of the index
-        t = vec4(colors[colorIndex]);
-        
+        //t = vec4(colors[colorIndex]);
+		
+		var certainty = 0.1;
+		var colorCount = 1 + certainty;
+		var red = (numPolygons - 1) * certainty;
+		var green = Math.floor( red / colorCount ) * certainty;
+		var blue = Math.floor( green / colorCount ) * certainty;
+        t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
+		
 		// Bind the color buffer to send color data to GPU
         gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
         gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
 
+		// Create a color for the depth buffer
+		t = vec4( ((numPolygons - 1)*0.1)%1.1, 0.0, 0.0, 1.0);
+		
+		// Bind the depth buffer to send color data to GPU
+		gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
+        gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
+		
+		// If a polygon is drawn
 		if (controlIndex == 2) {
 		// Increasing the count of vertices corresponding to the current polygon
 			numIndices[numPolygons-1]++;
@@ -91,8 +107,9 @@ window.onload = function init() {
 			render();
 		}
 		
-		// Remove the last elements from the polygon array if any other option is chosen
+		// A polygon was drawn but another option is chosen
 		if (controlIndex != 2 && polygonStart) {
+			// Remove the last elements from the polygon array if any other option is chosen
 			// Decrease the index so that the last vertices do not count
 			index -= numIndices[numPolygons-1];
 			
@@ -134,10 +151,14 @@ window.onload = function init() {
     gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
 	
-	
     var vColor = gl.getAttribLocation( program, "vColor" );
     gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vColor );
+	
+	// Creating the depth buffer as a color buffer
+	var depthBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
 }
 
 function render() {
