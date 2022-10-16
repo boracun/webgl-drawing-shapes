@@ -24,7 +24,7 @@ var colors = [
 	vec4( 0.0, 1.0, 1.0, 1.0 ), // cyan
 	vec4( 0.0, 0.0, 1.0, 1.0 ), // blue
 	vec4( 1.0, 0.0, 1.0, 1.0 ), // magenta
-	vec4( 1.0, 1.0, 1.0, 1.0 ), // white
+	vec4( 1.0, 1.0, 1.0, 1.0 ) // white
 ];
 
 window.onload = function init() {
@@ -35,7 +35,7 @@ window.onload = function init() {
     
 	// Control and color menus
 	var controlMenu = document.getElementById("Controls");
-    var colorMenu = document.getElementById("Colors");
+	var colorMenu = document.getElementById("Colors");
     
     // Obtain the selections from the menus
 	controlMenu.addEventListener("click", function() {
@@ -47,17 +47,18 @@ window.onload = function init() {
         });
     
     
-	//var a = document.getElementById("Button1")
-    //a.addEventListener("click", function(){
-    //numPolygons++;
-    //numIndices[numPolygons] = 0;
-    //start[numPolygons] = index;
-    //render();
-    //});
+	var a = document.getElementById("Button1")
+    a.addEventListener("click", function(){
+    numPolygons++;
+    numIndices[numPolygons] = 0;
+    start[numPolygons] = index;
+    render();
+    });
 
     canvas.addEventListener("mousedown", function(event){
 		// Obtain the vertex
-        t  = vec2(2*event.clientX/canvas.width-1, 2*(canvas.height-event.clientY)/canvas.height-1);
+        t  = vec2(2*event.clientX/canvas.width-1, 
+           2*(canvas.height-event.clientY)/canvas.height-1);
 		
 		// Bind the vertex buffer to send vertex data to GPU
         gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
@@ -74,14 +75,14 @@ window.onload = function init() {
         numIndices[numPolygons]++;
         index++;
 		
+	
+	
 		// If the count of vertices of a polygon is at least 3, it can be drawn
 		if (numIndices[numPolygons] >= 3)
 		{
 			render();
 		}
     } );
-	
-	render();
 
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
@@ -101,7 +102,7 @@ window.onload = function init() {
     gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, 8*maxNumVertices, gl.STATIC_DRAW );
 	
-	// 
+	
     var vPos = gl.getAttribLocation( program, "vPosition" );
     gl.vertexAttribPointer( vPos, 2, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPos );
@@ -111,7 +112,7 @@ window.onload = function init() {
     gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
 	
-	// 
+	
     var vColor = gl.getAttribLocation( program, "vColor" );
     gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vColor );
