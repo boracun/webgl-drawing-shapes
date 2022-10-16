@@ -15,6 +15,8 @@ var numIndices = [];
 numIndices[0] = 0;
 var start = [0];
 
+var polygonStart = true;
+
 // 8 predefined colors
 var colors = [
 	vec4( 0.0, 0.0, 0.0, 1.0 ), // black
@@ -49,13 +51,19 @@ window.onload = function init() {
     
 	var a = document.getElementById("Button1")
     a.addEventListener("click", function(){
-    numPolygons++;
     numIndices[numPolygons] = 0;
     start[numPolygons] = index;
+	polygonStart = true;
     render();
     });
 
     canvas.addEventListener("mousedown", function(event){
+		if (polygonStart)
+		{
+			numPolygons++;
+			polygonStart = false;
+		}
+		
 		// Obtain the vertex
         t  = vec2(2*event.clientX/canvas.width-1, 
            2*(canvas.height-event.clientY)/canvas.height-1);
@@ -72,15 +80,14 @@ window.onload = function init() {
         gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
 
 		// Increasing the count of vertices corresponding to the current polygon
-        numIndices[numPolygons]++;
+        numIndices[numPolygons-1]++;
         index++;
 		
-	
-	
+		render();
 		// If the count of vertices of a polygon is at least 3, it can be drawn
 		if (numIndices[numPolygons] >= 3)
 		{
-			render();
+			
 		}
     } );
 
@@ -123,7 +130,7 @@ function render() {
     gl.clear( gl.COLOR_BUFFER_BIT );
 
 	// Drawing each polygon
-    for(var i=0; i < numPolygons; i++) {
-        gl.drawArrays( gl.TRIANGLE_FAN, start[i], numIndices[i] );
+    for(var i=0; i<numPolygons; i++) {
+        gl.drawArrays( gl.TRIANGLE_STRIP, start[i], numIndices[i] );
     }
 }
