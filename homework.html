@@ -1,0 +1,69 @@
+<html>
+
+<!-- Vertex shader script --> 
+<script id="vertex-shader" type="x-shader/x-vertex">
+	attribute vec4 vPosition;
+	attribute vec4 vColor;
+
+	varying vec4 fColor;
+
+	void main()
+	{
+		gl_Position = vPosition;
+		fColor = vColor;
+	}
+</script>
+
+<!-- Fragment shader script --> 
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+	precision mediump float;
+
+	varying vec4 fColor;
+	void main()
+	{
+		gl_FragColor = fColor;
+	}
+</script>
+
+<!-- Including other scripts --> 
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="homework.js"></script>
+
+<body style = "margin:0px">
+
+<canvas id="gl-canvas" width="1024" height="512">
+	Sorry, your web browser does not support HTML5's canvas element.
+</canvas>
+
+<!-- Control menu --> 
+<select id="Controls" size="11">
+    <option value="0">Draw Rectangle</option>
+    <option value="1">Draw Triangle</option>
+	<option value="2">Create Polygon</option>
+    <option value="3">Move Object</option>
+	<option value="4">Remove Object</option>
+	<option value="5">Rotate Object</option>
+	<option value="6">Undo</option>
+	<option value="7">Redo</option>
+	<option value="8">Zoom in/out</option>
+	<option value="9">Save Scene</option>
+	<option value="10">Load Scene</option>
+</select>
+
+<!-- Color mennu --> 
+<select id="Colors" size="8">
+    <option value="0">Black</option>
+    <option value="1">Red</option>
+    <option value="2">Yellow</option>
+	<option value="3">Green</option>
+    <option value="4">Cyan</option>
+    <option value="5">Blue</option>
+	<option value="6">Magenta</option>
+    <option value="7">White</option>
+</select>
+
+</body>
+</html>
