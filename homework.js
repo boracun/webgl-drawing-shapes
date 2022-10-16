@@ -15,7 +15,7 @@ var numIndices = [];
 numIndices[0] = 0;
 var start = [0];
 
-var polygonStart = true;
+var polygonStart = false;
 
 // 8 predefined colors
 var colors = [
@@ -51,17 +51,21 @@ window.onload = function init() {
     
 	var a = document.getElementById("Button1")
     a.addEventListener("click", function(){
-    numIndices[numPolygons] = 0;
-    start[numPolygons] = index;
-	polygonStart = true;
-    render();
+		// If the create polygon button is selected, then draw the polygon
+		if (controlIndex == 2) {
+			numIndices[numPolygons] = 0;
+			start[numPolygons] = index;
+			polygonStart = false;
+			render();
+		}
     });
 
     canvas.addEventListener("mousedown", function(event){
-		if (polygonStart)
+		// If only the first vertex of the polygon is determined
+		if (!polygonStart)
 		{
 			numPolygons++;
-			polygonStart = false;
+			polygonStart = true;
 		}
 		
 		// Obtain the vertex
@@ -79,16 +83,27 @@ window.onload = function init() {
         gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
         gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
 
+		if (controlIndex == 2) {
 		// Increasing the count of vertices corresponding to the current polygon
-        numIndices[numPolygons-1]++;
-        index++;
-		
-		render();
-		// If the count of vertices of a polygon is at least 3, it can be drawn
-		if (numIndices[numPolygons] >= 3)
-		{
+			numIndices[numPolygons-1]++;
+			index++;
 			
+			render();
 		}
+		
+		// Remove the last elements from the polygon array if any other option is chosen
+		if (controlIndex != 2 && polygonStart) {
+			// Decrease the index so that the last vertices do not count
+			index -= numIndices[numPolygons-1];
+			
+			// Assign the count of vertices of the last polygon to 0
+			numIndices[numPolygons-1] = 0;
+			
+			// Decrease the number of polygons
+			numPolygons--;
+			polygonStart = false;
+		}
+			
     } );
 
 
@@ -131,6 +146,6 @@ function render() {
 
 	// Drawing each polygon
     for(var i=0; i<numPolygons; i++) {
-        gl.drawArrays( gl.TRIANGLE_STRIP, start[i], numIndices[i] );
+        gl.drawArrays( gl.TRIANGLE_FAN, start[i], numIndices[i] );
     }
 }
