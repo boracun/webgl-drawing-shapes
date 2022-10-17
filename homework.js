@@ -166,31 +166,38 @@ window.onload = function init() {
 			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
 			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			
+			console.log(t);
+			/**
 			// Fill the vertex array		
 			vertexArray[index] = t;
 			
-			// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
-			var startIndex = start[numPolygons - 1];
-			var endIndex = index; // included
+			// Obtain the starting and ending vertices to create a convex polygon
+			var startIndex = index - numIndices[numPolygons-1];
+			var endIndex = index;
+
 			var vertexCount = numIndices[numPolygons-1] + 1;
+			var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
 			
-			// Obtain the convex polygon with given vertices
-			var convexVertices = createConvexPolygon(vertexArray.slice(startIndex, endIndex + 1), vertexCount);
-			console.log(vertexArray);
-			
-			// Bind the vertex buffer to send the corrected vertices data to GPU
+			// Bind the vertex buffer to send vertex data to GPU
 			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			
+			console.log(vertexArray[0][0]);
+			console.log(vertexArray[0][1]);
 			
 			for ( var count = 0; count < vertexCount; count++ )
 			{
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(convexVertices[count]));
+				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
+				console.log(inorderVertex);
+				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
 			}
+			*/
 			
 			// Increasing the count of vertices corresponding to the current polygon
 			numIndices[numPolygons-1]++;
 			index++;
 			
 			render();
+			
 		}
 			
     } );
@@ -247,28 +254,12 @@ function render() {
         gl.drawArrays( gl.LINE_LOOP, start[i], numIndices[i] );
     }
 }
-
+/*
 function createConvexPolygon(vertices, length)
 {
-	var convexVertices = [];
+	//for (var i = 0; i < length; i++)
+		//console.log(vertices[i]);
 	
-	// interchanging indices 0 and 1 to see if the function works properly
-	if (length > 2)
-	{
-		convexVertices[0] = vertices[1];
-		convexVertices[1] = vertices[0];
-		
-		for (var i = 2; i < length; i++)
-			convexVertices[i] = vertices[i];
-		console.log(convexVertices);
-	}
-	
-	else
-	{
-		for (var i = 0; i < length; i++)
-			convexVertices[i] = vertices[i];
-		console.log(convexVertices);
-	}
-
-	return convexVertices;
+	return vertices;
 }
+*/
