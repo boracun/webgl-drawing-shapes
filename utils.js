@@ -1,20 +1,22 @@
 class Shape {
-    points;
+    vertices;
     color;
 
     constructor(points, color) {
-        this.points = points;
+        this.vertices = points;
         this.color = color;
     }
+
+    function
 }
 
 class Rectangle extends Shape {
     constructor(begin, end, color) {
         super([], color);
-        this.points.push(begin);
-        this.points.push(vec2(begin[0], end[1]));
-        this.points.push(end);
-        this.points.push(vec2(end[0], begin[1]));
+        this.vertices.push(begin);
+        this.vertices.push(vec2(begin[0], end[1]));
+        this.vertices.push(end);
+        this.vertices.push(vec2(end[0], begin[1]));
     }
 }
 
@@ -31,8 +33,8 @@ class Triangle extends Shape {
 
         let topX = (begin[0] + end[0]) / 2;
         let topY = (Math.abs(end[0] - begin[0]) * Math.sqrt(3) / 2) + end[1];
-        this.points.push(vec2(topX, topY));
-        this.points.push(vec2(begin[0], end[1]));
-        this.points.push(end);
+        this.vertices.push(vec2(topX, topY));
+        this.vertices.push(vec2(begin[0], end[1]));
+        this.vertices.push(end);
     }
 }
