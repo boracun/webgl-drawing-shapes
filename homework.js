@@ -9,12 +9,7 @@ var index = 0;
 var controlIndex = 0;
 var colorIndex = 0;
 
-var vertex;
-var color;
-var numPolygons = 0;
-var numIndices = [];
-numIndices[0] = 0;
-var start = [0];
+var polygons = [];
 
 var polygonStart = false;
 
@@ -24,48 +19,15 @@ var colorArray = [];
 var vertexBuffer;
 var colorBuffer;
 
-var DRAW_RECTANGLE = 0;
-var DRAW_TRIANGLE = 1;
-var CREATE_POLYGON = 2;
-var MOVE_OBJECT = 3;
-var REMOVE_OBJECT = 4;
-var ROTATE_OBJECT = 5;
-var UNDO = 6;
-var REDO = 7;
-var ZOOM = 8;
-var SAVE_SCENE = 9;
-var LOAD_SCENE = 10;
-
-// 8 predefined colors
-var colors = [
-	vec4( 0.0, 0.0, 0.0, 1.0 ), // black
-	vec4( 1.0, 0.0, 0.0, 1.0 ), // red
-	vec4( 1.0, 1.0, 0.0, 1.0 ), // yellow
-	vec4( 0.0, 1.0, 0.0, 1.0 ), // green
-	vec4( 0.0, 1.0, 1.0, 1.0 ), // cyan
-	vec4( 0.0, 0.0, 1.0, 1.0 ), // blue
-	vec4( 1.0, 0.0, 1.0, 1.0 ), // magenta
-	vec4( 1.0, 1.0, 1.0, 1.0 ) // white
-];
-
 function completePolygon() {
 	if (polygonStart) {
 		// Remove the last elements from the polygon array if any other option is chosen
 		// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
-		if (numIndices[numPolygons - 1] < 3) {
-			index -= numIndices[numPolygons-1];
+		if (polygons[polygons.length - 1].vertices.length < 3) {
+			index -= polygons[polygons.length - 1].vertices.length;
 
-			// Assign the count of vertices of the last polygon to 0
-			numIndices[numPolygons - 1] = 0;
-
-			// Decrease the number of polygons
-			numPolygons--;
-		}
-
-		// If the given vertices specifies a polygon, only end the drawing process of that polygon
-		else {
-			numIndices[numPolygons] = 0;
-			start[numPolygons] = index;
+			// Remove the last polygon from polygons
+			polygons.pop();
 		}
 
 		polygonStart = false;
@@ -74,34 +36,35 @@ function completePolygon() {
 }
 
 function addPolygonVertex(event) {
+	var vertex;
+
 	// If only the first vertex of the polygon/shape is determined
 	if (!polygonStart) {
-		numPolygons++;
+		polygons.push(new Polygon([], vec4(colors[colorIndex])));
 		polygonStart = true;
-
-		// Obtain the color of the index
-		color = vec4(colors[colorIndex]);
 
 		// Create a color for the color array
 		var certainty = 0.1;
 		var colorCount = (1 + certainty);
-		var red = (numPolygons - 1) * certainty;
-		var green = Math.floor( red / colorCount ) * certainty;
-		var blue = Math.floor( green / colorCount ) * certainty;
+		var red = (polygons.length - 1) * certainty;
+		var green = Math.floor(red / colorCount) * certainty;
+		var blue = Math.floor(green / colorCount) * certainty;
 
 		vertex = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
 
 		// Add the unique color to the color array
-		colorArray[numPolygons - 1] = vertex;
+		colorArray[polygons.length - 1] = vertex;
 	}
 
 	// Bind the color buffer to send color data to GPU
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(color));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(polygons[polygons.length - 1].color));
 
 	// Obtain the vertex
 	vertex = vec2(2 * event.clientX / canvas.width - 1,
 		2 * (canvas.height - event.clientY) / canvas.height - 1);
+
+	polygons[polygons.length - 1].addVertex(vertex);
 
 	// Bind the vertex buffer to send vertex data to GPU
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -132,9 +95,6 @@ function addPolygonVertex(event) {
 				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
 			}
 	 */
-
-	// Increasing the count of vertices corresponding to the current polygon
-	numIndices[numPolygons - 1]++;
 	index++;
 
 	render();
@@ -211,8 +171,7 @@ window.onload = function init() {
 	// Creating the vertex buffer and binding it
     vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 8*maxNumVertices, gl.STATIC_DRAW);
-	
+    gl.bufferData(gl.ARRAY_BUFFER, 8 * maxNumVertices, gl.STATIC_DRAW);
 	
     var vPos = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
@@ -230,11 +189,13 @@ window.onload = function init() {
 
 function render() {
     // Clear the canvas (with grey) to redraw everything
-    gl.clear( gl.COLOR_BUFFER_BIT );
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
 	// Drawing each polygon
-    for(var i = 0; i < numPolygons; i++) {
-        gl.drawArrays(gl.LINE_LOOP, start[i], numIndices[i]);
+	let startIndex = 0;
+    for(var i = 0; i < polygons.length; i++) {
+        gl.drawArrays(gl.LINE_LOOP, startIndex, polygons[i].vertices.length);
+		startIndex += polygons[i].vertices.length;
     }
 }
 /*

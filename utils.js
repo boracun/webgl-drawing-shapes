@@ -2,8 +2,8 @@ class Polygon {
     vertices;
     color;
 
-    constructor(points, color) {
-        this.vertices = points;
+    constructor(vertices, color) {
+        this.vertices = vertices;
         this.color = color;
     }
 
@@ -40,3 +40,27 @@ class Triangle extends Polygon {
         this.vertices.push(end);
     }
 }
+
+const DRAW_RECTANGLE = 0;
+const DRAW_TRIANGLE = 1;
+const CREATE_POLYGON = 2;
+const MOVE_OBJECT = 3;
+const REMOVE_OBJECT = 4;
+const ROTATE_OBJECT = 5;
+const UNDO = 6;
+const REDO = 7;
+const ZOOM = 8;
+const SAVE_SCENE = 9;
+const LOAD_SCENE = 10;
+
+// 8 predefined colors
+var colors = [
+    vec4( 0.0, 0.0, 0.0, 1.0 ), // black
+    vec4( 1.0, 0.0, 0.0, 1.0 ), // red
+    vec4( 1.0, 1.0, 0.0, 1.0 ), // yellow
+    vec4( 0.0, 1.0, 0.0, 1.0 ), // green
+    vec4( 0.0, 1.0, 1.0, 1.0 ), // cyan
+    vec4( 0.0, 0.0, 1.0, 1.0 ), // blue
+    vec4( 1.0, 0.0, 1.0, 1.0 ), // magenta
+    vec4( 1.0, 1.0, 1.0, 1.0 ) 	// white
+];
