@@ -18,6 +18,14 @@ var start = [0];
 
 var polygonStart = false;
 
+var color = new Uint8Array(4);
+
+var vertexArray = [];
+var colorArray = [];
+
+var vertexBuffer;
+var colorBuffer;
+
 var DRAW_RECTANGLE = 0;
 var DRAW_TRIANGLE = 1;
 var CREATE_POLYGON = 2;
@@ -29,11 +37,6 @@ var REDO = 7;
 var ZOOM = 8;
 var SAVE_SCENE = 9;
 var LOAD_SCENE = 10;
-
-var color = new Uint8Array(4);
-
-var vertexArray = [];
-var colorArray = [];
 
 // 8 predefined colors
 var colors = [
@@ -72,6 +75,73 @@ function completePolygon() {
 	}
 }
 
+function addPolygonVertex(event) {
+	// If only the first vertex of the polygon/shape is determined
+	if (!polygonStart) {
+		numPolygons++;
+		polygonStart = true;
+
+		// Obtain the color of the index
+		c = vec4(colors[colorIndex]);
+
+		// Create a color for the color array
+		var certainty = 0.1;
+		var colorCount = (1 + certainty);
+		var red = (numPolygons - 1) * certainty;
+		var green = Math.floor( red / colorCount ) * certainty;
+		var blue = Math.floor( green / colorCount ) * certainty;
+
+		t = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
+
+		// Add the unique color to the color array
+		colorArray[numPolygons - 1] = t;
+	}
+
+	// Bind the color buffer to send color data to GPU
+	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(c));
+
+	// Obtain the vertex
+	t = vec2(2 * event.clientX / canvas.width - 1,
+		2 * (canvas.height - event.clientY) / canvas.height - 1);
+
+	// Bind the vertex buffer to send vertex data to GPU
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(t));
+
+	console.log(t);
+	/**
+	 // Fill the vertex array
+	 vertexArray[index] = t;
+
+	 // Obtain the starting and ending vertices to create a convex polygon
+	 var startIndex = index - numIndices[numPolygons-1];
+	 var endIndex = index;
+
+	 var vertexCount = numIndices[numPolygons-1] + 1;
+	 var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
+
+	 // Bind the vertex buffer to send vertex data to GPU
+	 gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+
+	 console.log(vertexArray[0][0]);
+	 console.log(vertexArray[0][1]);
+
+	 for ( var count = 0; count < vertexCount; count++ )
+	 {
+				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
+				console.log(inorderVertex);
+				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
+			}
+	 */
+
+	// Increasing the count of vertices corresponding to the current polygon
+	numIndices[numPolygons-1]++;
+	index++;
+
+	render();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -102,86 +172,20 @@ window.onload = function init() {
 		completePolygon();
     });
 
-
-			
-    canvas.addEventListener("mousedown", function(event){
-	
-		// If an object is wanted to be selected
-		if ( controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
-		{
-			
+	// Mousedown
+    canvas.addEventListener("mousedown", function(event) {
+		switch (controlIndex) {
+			// If an object is wanted to be created
+			case CREATE_POLYGON:
+				addPolygonVertex(event);
+				break;
+			// If an object is wanted to be selected
+			case REMOVE_OBJECT:
+			case ROTATE_OBJECT:
+				break;
+			default:
+				break;
 		}
-
-		// If an object is wanted to be created
-		else if ( controlIndex == CREATE_POLYGON) {
-			// If only the first vertex of the polygon/shape is determined
-			if (!polygonStart)
-			{
-				numPolygons++;
-				polygonStart = true;
-				
-				// Obtain the color of the index
-				c = vec4(colors[colorIndex]);
-				
-				// Create a color for the color array
-				var certainty = 0.1;
-				var colorCount = (1 + certainty);
-				var red = (numPolygons - 1) * certainty;
-				var green = Math.floor( red / colorCount ) * certainty;
-				var blue = Math.floor( green / colorCount ) * certainty;
-				
-				t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
-				
-				// Add the unique color to the color array
-				colorArray[numPolygons - 1] = t;
-			}
-			
-			// Bind the color buffer to send color data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
-			
-			// Obtain the vertex
-			t  = vec2(2*event.clientX/canvas.width-1, 
-			   2*(canvas.height-event.clientY)/canvas.height-1);
-			  
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
-			
-			console.log(t);
-			/**
-			// Fill the vertex array		
-			vertexArray[index] = t;
-			
-			// Obtain the starting and ending vertices to create a convex polygon
-			var startIndex = index - numIndices[numPolygons-1];
-			var endIndex = index;
-
-			var vertexCount = numIndices[numPolygons-1] + 1;
-			var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
-			
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			
-			console.log(vertexArray[0][0]);
-			console.log(vertexArray[0][1]);
-			
-			for ( var count = 0; count < vertexCount; count++ )
-			{
-				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
-				console.log(inorderVertex);
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
-			}
-			*/
-			
-			// Increasing the count of vertices corresponding to the current polygon
-			numIndices[numPolygons-1]++;
-			index++;
-			
-			render();
-			
-		}
-			
     } );
 
 	/*
@@ -196,35 +200,34 @@ window.onload = function init() {
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
-    // Determine the clear color (ligth grey)
-	gl.clearColor( 0.9, 0.9, 0.9, 1.0 );
+    // Determine the clear color (light grey)
+	gl.clearColor(0.9, 0.9, 0.9, 1.0);
 	
     // Clear the canvas (with grey)
-	gl.clear( gl.COLOR_BUFFER_BIT );
+	gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Load shaders and initialize attribute buffers
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
+    var program = initShaders(gl, "vertex-shader", "fragment-shader");
+    gl.useProgram(program);
     
 	// Creating the vertex buffer and binding it
-    var vertexBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, 8*maxNumVertices, gl.STATIC_DRAW );
+    vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 8*maxNumVertices, gl.STATIC_DRAW);
 	
 	
-    var vPos = gl.getAttribLocation( program, "vPosition" );
-    gl.vertexAttribPointer( vPos, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vPos );
+    var vPos = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPos);
     
 	// Creating the color buffer and binding it
-    var colorBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
+    colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 16 * maxNumVertices, gl.STATIC_DRAW);
 	
-    var vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vColor );
-	
+    var vColor = gl.getAttribLocation(program, "vColor");
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
 }
 
 function render() {
@@ -232,8 +235,8 @@ function render() {
     gl.clear( gl.COLOR_BUFFER_BIT );
 
 	// Drawing each polygon
-    for(var i=0; i<numPolygons; i++) {
-        gl.drawArrays( gl.LINE_LOOP, start[i], numIndices[i] );
+    for(var i = 0; i < numPolygons; i++) {
+        gl.drawArrays(gl.LINE_LOOP, start[i], numIndices[i]);
     }
 }
 /*
