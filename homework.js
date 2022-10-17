@@ -69,7 +69,7 @@ function createTriangle(event) {
 	polygons.push(triangle);
 
 	addColorToBuffer(triangle.color, 3);
-	addVertexToBuffer(triangle.vertices, 3);
+	addVertexToBuffer(triangle.vertices);
 	index += 3;
 
 	render();
