@@ -30,6 +30,11 @@ var ZOOM = 8;
 var SAVE_SCENE = 9;
 var LOAD_SCENE = 10;
 
+var color = new Uint8Array(4);
+
+var vertexArray = [];
+var colorArray = [];
+
 //varying vec4 color;
 
 // 8 predefined colors
@@ -81,6 +86,7 @@ window.onload = function init() {
 			}
 			
 			polygonStart = false;
+			render();
 		}
 	
         });
@@ -94,8 +100,21 @@ window.onload = function init() {
     a.addEventListener("click", function(){
 		// If the button is clicked, then end the polygon drawing process
 		if (polygonStart) {
-			numIndices[numPolygons] = 0;
-			start[numPolygons] = index;
+			if ( numIndices[numPolygons-1] < 3 )
+			{
+				index -= numIndices[numPolygons-1];
+						
+				// Assign the count of vertices of the last polygon to 0
+				numIndices[numPolygons-1] = 0;
+						
+				// Decrease the number of polygons
+				numPolygons--;
+			}
+			else {
+				numIndices[numPolygons] = 0;
+				start[numPolygons] = index;
+			}
+			
 			polygonStart = false;
 			render();
 		}
@@ -108,11 +127,6 @@ window.onload = function init() {
 		// If an object is wanted to be selected
 		if ( controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
 		{
-			// Obtain the location of the mouse
-			t  = vec2(2*event.clientX/canvas.width-1, 
-			   2*(canvas.height-event.clientY)/canvas.height-1);
-			   
-			 //gl.readPixels(t, canvas.width, canvas.height, gl.RGBA, );
 			
 		}
 
@@ -126,6 +140,18 @@ window.onload = function init() {
 				
 				// Obtain the color of the index
 				c = vec4(colors[colorIndex]);
+				
+				// Create a color for the color array
+				var certainty = 0.1;
+				var colorCount = (1 + certainty);
+				var red = (numPolygons - 1) * certainty;
+				var green = Math.floor( red / colorCount ) * certainty;
+				var blue = Math.floor( green / colorCount ) * certainty;
+				
+				t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
+				
+				// Add the unique color to the color array
+				colorArray[numPolygons - 1] = t;
 			}
 			
 			// Bind the color buffer to send color data to GPU
@@ -135,27 +161,15 @@ window.onload = function init() {
 			// Obtain the vertex
 			t  = vec2(2*event.clientX/canvas.width-1, 
 			   2*(canvas.height-event.clientY)/canvas.height-1);
+			   
 			
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
-
-			// Create a color for the depth buffer
-			var certainty = 0.1;
-			var colorCount = 1 + certainty;
-			var red = (numPolygons - 1) * certainty;
-			var green = Math.floor( red / colorCount ) * certainty;
-			var blue = Math.floor( green / colorCount ) * certainty;
-			t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
-			
-			// Bind the depth buffer to send color data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(t));
-			
+			// Fill the vertex array		
+			vertexArray[index] = t;
+		
 			// Increasing the count of vertices corresponding to the current polygon
 			numIndices[numPolygons-1]++;
 			index++;
-				
+			
 			render();
 			
 		}
@@ -201,10 +215,6 @@ window.onload = function init() {
     gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vColor );
 	
-	// Creating the depth buffer as a color buffer
-	var depthBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, depthBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
 }
 
 function render() {
