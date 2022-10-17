@@ -19,6 +19,34 @@ var colorArray = [];
 var vertexBuffer;
 var colorBuffer;
 
+function getClickPosition(event) {
+	return vec2(2 * event.clientX / canvas.width - 1, 2 * (canvas.height - event.clientY) / canvas.height - 1);
+}
+
+function getUniqueColor() {
+	// Create a color for the color array
+	var certainty = 0.1;
+	var colorCount = (1 + certainty);
+	var red = (polygons.length - 1) * certainty;
+	var green = Math.floor(red / colorCount) * certainty;
+	var blue = Math.floor(green / colorCount) * certainty;
+
+	vertex = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
+
+	// Add the unique color to the color array
+	colorArray[polygons.length - 1] = vertex;
+}
+
+function addColorToBuffer(color) {
+	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(color));
+}
+
+function addVertexToBuffer(vertex) {
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(vertex));
+}
+
 function completePolygon() {
 	if (polygonStart) {
 		// Remove the last elements from the polygon array if any other option is chosen
@@ -43,32 +71,18 @@ function addPolygonVertex(event) {
 		polygons.push(new Polygon([], vec4(colors[colorIndex])));
 		polygonStart = true;
 
-		// Create a color for the color array
-		var certainty = 0.1;
-		var colorCount = (1 + certainty);
-		var red = (polygons.length - 1) * certainty;
-		var green = Math.floor(red / colorCount) * certainty;
-		var blue = Math.floor(green / colorCount) * certainty;
-
-		vertex = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
-
-		// Add the unique color to the color array
-		colorArray[polygons.length - 1] = vertex;
+		getUniqueColor();
 	}
 
 	// Bind the color buffer to send color data to GPU
-	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(polygons[polygons.length - 1].color));
+	addColorToBuffer(polygons[polygons.length - 1].color);
 
 	// Obtain the vertex
-	vertex = vec2(2 * event.clientX / canvas.width - 1,
-		2 * (canvas.height - event.clientY) / canvas.height - 1);
-
+	vertex = getClickPosition(event);
 	polygons[polygons.length - 1].addVertex(vertex);
 
 	// Bind the vertex buffer to send vertex data to GPU
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(vertex));
+	addVertexToBuffer(vertex);
 
 	console.log(vertex);
 	/**
