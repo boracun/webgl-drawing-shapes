@@ -7,7 +7,9 @@ class Shape {
         this.color = color;
     }
 
-    function
+    addVertex(vertex) {
+        this.vertices.push(vertex);
+    }
 }
 
 class Rectangle extends Shape {
