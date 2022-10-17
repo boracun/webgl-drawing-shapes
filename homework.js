@@ -12,6 +12,7 @@ var colorIndex = 0;
 var polygons = [];
 
 var polygonStart = false;
+var clickPosition;
 
 var vertexArray = [];
 var colorArray = [];
@@ -37,14 +38,30 @@ function getUniqueColor() {
 	colorArray[polygons.length - 1] = vertex;
 }
 
-function addColorToBuffer(color) {
+function addColorToBuffer(color, vertexCount = 1) {
+	let vertexColors = [];
+	for (let i = 0; i < vertexCount; i++) {
+		vertexColors.push(color);
+	}
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(color));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index * vertexCount, flatten(vertexColors));
 }
 
-function addVertexToBuffer(vertex) {
+function addVertexToBuffer(vertex, vertexCount = 1) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(vertex));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index * vertexCount, flatten(vertex));
+}
+
+function createRectangle(event) {
+	let rectangle = new Rectangle(clickPosition, getClickPosition(event), vec4(colors[colorIndex]));
+	polygons.push(rectangle);
+
+	addColorToBuffer(rectangle.color, 4);
+	addVertexToBuffer(rectangle.vertices, 4);
+	index += 4;
+
+	render();
 }
 
 function completePolygon() {
@@ -147,6 +164,11 @@ window.onload = function init() {
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
 		switch (controlIndex) {
+			// Rectangle draw mode
+			case DRAW_RECTANGLE:
+			case DRAW_TRIANGLE:
+				clickPosition = getClickPosition(event);
+				break;
 			// If an object is wanted to be created
 			case CREATE_POLYGON:
 				addPolygonVertex(event);
@@ -158,7 +180,19 @@ window.onload = function init() {
 			default:
 				break;
 		}
-    } );
+    });
+
+	// Mouseup
+	canvas.addEventListener("mouseup", function(event) {
+		switch (controlIndex) {
+			// Rectangle draw mode
+			case DRAW_RECTANGLE:
+				createRectangle(event);
+				break;
+			default:
+				break;
+		}
+	});
 
 	/*
 	// Used only for moving an object
@@ -208,9 +242,11 @@ function render() {
 	// Drawing each polygon
 	let startIndex = 0;
     for(var i = 0; i < polygons.length; i++) {
-        gl.drawArrays(gl.LINE_LOOP, startIndex, polygons[i].vertices.length);
+        gl.drawArrays(gl.TRIANGLE_FAN, startIndex, polygons[i].vertices.length);
 		startIndex += polygons[i].vertices.length;
     }
+
+	console.log(polygons);
 }
 /*
 function createConvexPolygon(vertices, length)
