@@ -35,8 +35,6 @@ var color = new Uint8Array(4);
 var vertexArray = [];
 var colorArray = [];
 
-//varying vec4 color;
-
 // 8 predefined colors
 var colors = [
 	vec4( 0.0, 0.0, 0.0, 1.0 ), // black
@@ -49,11 +47,34 @@ var colors = [
 	vec4( 1.0, 1.0, 1.0, 1.0 ) // white
 ];
 
+function completePolygon() {
+	// Remove the last elements from the polygon array if any other option is chosen
+	// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
+	if ( numIndices[numPolygons-1] < 3 ) {
+		index -= numIndices[numPolygons-1];
+
+		// Assign the count of vertices of the last polygon to 0
+		numIndices[numPolygons-1] = 0;
+
+		// Decrease the number of polygons
+		numPolygons--;
+	}
+
+	// If the given vertices specifies a polygon, only end the drawing process of that polygon
+	else {
+		numIndices[numPolygons] = 0;
+		start[numPolygons] = index;
+	}
+
+	polygonStart = false;
+	render();
+}
+
 window.onload = function init() {
-    canvas = document.getElementById( "gl-canvas" );
+    canvas = document.getElementById("gl-canvas");
     
-    gl = WebGLUtils.setupWebGL( canvas );
-    if ( !gl ) { alert( "WebGL isn't available" ); }
+    gl = WebGLUtils.setupWebGL(canvas);
+    if (!gl) { alert("WebGL isn't available"); }
     
 	// Control and color menus
 	var controlMenu = document.getElementById("Controls");
@@ -62,31 +83,12 @@ window.onload = function init() {
     // Obtain the selections from the menus
 	controlMenu.addEventListener("click", function() {
     controlIndex = controlMenu.selectedIndex;
+
+
 	   
 	   // The drawing process of a polygon was not done but another option is chosen
 		if (controlIndex != CREATE_POLYGON && polygonStart) {
-			// Remove the last elements from the polygon array if any other option is chosen
-			// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
-			if ( numIndices[numPolygons-1] < 3 )
-			{
-				index -= numIndices[numPolygons-1];
-						
-				// Assign the count of vertices of the last polygon to 0
-				numIndices[numPolygons-1] = 0;
-						
-				// Decrease the number of polygons
-				numPolygons--;
-			}
-			
-			// If the given vertices specifies a polygon, only end the drawing process of that polygon
-			else
-			{
-				numIndices[numPolygons] = 0;
-				start[numPolygons] = index;
-			}
-			
-			polygonStart = false;
-			render();
+			completePolygon();
 		}
 	
         });
@@ -100,27 +102,11 @@ window.onload = function init() {
     a.addEventListener("click", function(){
 		// If the button is clicked, then end the polygon drawing process
 		if (polygonStart) {
-			if ( numIndices[numPolygons-1] < 3 )
-			{
-				index -= numIndices[numPolygons-1];
-						
-				// Assign the count of vertices of the last polygon to 0
-				numIndices[numPolygons-1] = 0;
-						
-				// Decrease the number of polygons
-				numPolygons--;
-			}
-			else {
-				numIndices[numPolygons] = 0;
-				start[numPolygons] = index;
-			}
-			
-			polygonStart = false;
-			render();
+			completePolygon();
 		}
     });
 
-	
+
 			
     canvas.addEventListener("mousedown", function(event){
 	
