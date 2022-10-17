@@ -1,5 +1,7 @@
 <html>
 
+<link rel="stylesheet" href="style.css">
+
 <!-- Vertex shader script --> 
 <script id="vertex-shader" type="x-shader/x-vertex">
 	attribute vec4 vPosition;
@@ -56,14 +58,14 @@
 
 <!-- Color mennu --> 
 <select id="Colors" size="8">
-    <option value="0">Black</option>
-    <option value="1">Red</option>
-    <option value="2">Yellow</option>
-	<option value="3">Green</option>
-    <option value="4">Cyan</option>
-    <option value="5">Blue</option>
-	<option value="6">Magenta</option>
-    <option value="7">White</option>
+    <option id="black-option" value="0"></option>
+    <option id="red-option" value="1"></option>
+    <option id="yellow-option" value="2"></option>
+	<option id="green-option" value="3"></option>
+    <option id="cyan-option" value="4"></option>
+    <option id="blue-option" value="5"></option>
+	<option id="magenta-option" value="6"></option>
+    <option id="white-option" value="7"></option>
 </select>
 <button id = "Button1">End Polygon</button>
 </body>
