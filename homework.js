@@ -48,26 +48,28 @@ var colors = [
 ];
 
 function completePolygon() {
-	// Remove the last elements from the polygon array if any other option is chosen
-	// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
-	if ( numIndices[numPolygons-1] < 3 ) {
-		index -= numIndices[numPolygons-1];
+	if (polygonStart) {
+		// Remove the last elements from the polygon array if any other option is chosen
+		// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
+		if (numIndices[numPolygons - 1] < 3) {
+			index -= numIndices[numPolygons-1];
 
-		// Assign the count of vertices of the last polygon to 0
-		numIndices[numPolygons-1] = 0;
+			// Assign the count of vertices of the last polygon to 0
+			numIndices[numPolygons - 1] = 0;
 
-		// Decrease the number of polygons
-		numPolygons--;
+			// Decrease the number of polygons
+			numPolygons--;
+		}
+
+		// If the given vertices specifies a polygon, only end the drawing process of that polygon
+		else {
+			numIndices[numPolygons] = 0;
+			start[numPolygons] = index;
+		}
+
+		polygonStart = false;
+		render();
 	}
-
-	// If the given vertices specifies a polygon, only end the drawing process of that polygon
-	else {
-		numIndices[numPolygons] = 0;
-		start[numPolygons] = index;
-	}
-
-	polygonStart = false;
-	render();
 }
 
 window.onload = function init() {
@@ -82,28 +84,22 @@ window.onload = function init() {
     
     // Obtain the selections from the menus
 	controlMenu.addEventListener("click", function() {
-    controlIndex = controlMenu.selectedIndex;
+    	controlIndex = controlMenu.selectedIndex;
 
-
-	   
 	   // The drawing process of a polygon was not done but another option is chosen
-		if (controlIndex != CREATE_POLYGON && polygonStart) {
+		if (controlIndex != CREATE_POLYGON) {
 			completePolygon();
 		}
-	
-        });
+	});
 	
 	colorMenu.addEventListener("click", function() {
        colorIndex = colorMenu.selectedIndex;
-        });
-    
-    
-	var a = document.getElementById("Button1")
-    a.addEventListener("click", function(){
+	});
+
+	var endPolygonButton = document.getElementById("end-polygon-button")
+    endPolygonButton.addEventListener("click", function(){
 		// If the button is clicked, then end the polygon drawing process
-		if (polygonStart) {
-			completePolygon();
-		}
+		completePolygon();
     });
 
 
