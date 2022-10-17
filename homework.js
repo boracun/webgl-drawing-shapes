@@ -9,16 +9,14 @@ var index = 0;
 var controlIndex = 0;
 var colorIndex = 0;
 
-var t;
-var c;
+var vertex;
+var color;
 var numPolygons = 0;
 var numIndices = [];
 numIndices[0] = 0;
 var start = [0];
 
 var polygonStart = false;
-
-var color = new Uint8Array(4);
 
 var vertexArray = [];
 var colorArray = [];
@@ -82,7 +80,7 @@ function addPolygonVertex(event) {
 		polygonStart = true;
 
 		// Obtain the color of the index
-		c = vec4(colors[colorIndex]);
+		color = vec4(colors[colorIndex]);
 
 		// Create a color for the color array
 		var certainty = 0.1;
@@ -91,28 +89,28 @@ function addPolygonVertex(event) {
 		var green = Math.floor( red / colorCount ) * certainty;
 		var blue = Math.floor( green / colorCount ) * certainty;
 
-		t = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
+		vertex = vec4(red % colorCount, green % colorCount, blue % colorCount, 1.0);
 
 		// Add the unique color to the color array
-		colorArray[numPolygons - 1] = t;
+		colorArray[numPolygons - 1] = vertex;
 	}
 
 	// Bind the color buffer to send color data to GPU
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(c));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(color));
 
 	// Obtain the vertex
-	t = vec2(2 * event.clientX / canvas.width - 1,
+	vertex = vec2(2 * event.clientX / canvas.width - 1,
 		2 * (canvas.height - event.clientY) / canvas.height - 1);
 
 	// Bind the vertex buffer to send vertex data to GPU
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(t));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(vertex));
 
-	console.log(t);
+	console.log(vertex);
 	/**
 	 // Fill the vertex array
-	 vertexArray[index] = t;
+	 vertexArray[index] = vertex;
 
 	 // Obtain the starting and ending vertices to create a convex polygon
 	 var startIndex = index - numIndices[numPolygons-1];
@@ -136,7 +134,7 @@ function addPolygonVertex(event) {
 	 */
 
 	// Increasing the count of vertices corresponding to the current polygon
-	numIndices[numPolygons-1]++;
+	numIndices[numPolygons - 1]++;
 	index++;
 
 	render();
