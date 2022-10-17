@@ -161,11 +161,37 @@ window.onload = function init() {
 			// Obtain the vertex
 			t  = vec2(2*event.clientX/canvas.width-1, 
 			   2*(canvas.height-event.clientY)/canvas.height-1);
-			   
+			  
+			// Bind the vertex buffer to send vertex data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			
+			console.log(t);
+			/**
 			// Fill the vertex array		
 			vertexArray[index] = t;
-		
+			
+			// Obtain the starting and ending vertices to create a convex polygon
+			var startIndex = index - numIndices[numPolygons-1];
+			var endIndex = index;
+
+			var vertexCount = numIndices[numPolygons-1] + 1;
+			var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
+			
+			// Bind the vertex buffer to send vertex data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			
+			console.log(vertexArray[0][0]);
+			console.log(vertexArray[0][1]);
+			
+			for ( var count = 0; count < vertexCount; count++ )
+			{
+				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
+				console.log(inorderVertex);
+				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
+			}
+			*/
+			
 			// Increasing the count of vertices corresponding to the current polygon
 			numIndices[numPolygons-1]++;
 			index++;
@@ -176,13 +202,15 @@ window.onload = function init() {
 			
     } );
 
+	/*
 	// Used only for moving an object
-	//canvas.addEventListener("mousemove", function(event){
-		//if ( controlIndex == MOVE_OBJECT )
-		//{}
-      //}
+	canvas.addEventListener("mousemove", function(event){
+		if ( controlIndex == MOVE_OBJECT )
+		{}
+      }
 
-    //} );
+    } );
+	*/
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
@@ -223,6 +251,15 @@ function render() {
 
 	// Drawing each polygon
     for(var i=0; i<numPolygons; i++) {
-        gl.drawArrays( gl.TRIANGLE_FAN, start[i], numIndices[i] );
+        gl.drawArrays( gl.LINE_LOOP, start[i], numIndices[i] );
     }
 }
+/*
+function createConvexPolygon(vertices, length)
+{
+	//for (var i = 0; i < length; i++)
+		//console.log(vertices[i]);
+	
+	return vertices;
+}
+*/
