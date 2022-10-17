@@ -1,4 +1,4 @@
-class Shape {
+class Polygon {
     vertices;
     color;
 
@@ -12,7 +12,7 @@ class Shape {
     }
 }
 
-class Rectangle extends Shape {
+class Rectangle extends Polygon {
     constructor(begin, end, color) {
         super([], color);
         this.vertices.push(begin);
@@ -22,7 +22,7 @@ class Rectangle extends Shape {
     }
 }
 
-class Triangle extends Shape {
+class Triangle extends Polygon {
     constructor(begin, end, color) {
         super([], color);
 
