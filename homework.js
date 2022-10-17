@@ -45,12 +45,12 @@ function addColorToBuffer(color, vertexCount = 1) {
 	}
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index * vertexCount, flatten(vertexColors));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 16 * index, flatten(vertexColors));
 }
 
-function addVertexToBuffer(vertex, vertexCount = 1) {
+function addVertexToBuffer(vertex) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index * vertexCount, flatten(vertex));
+	gl.bufferSubData(gl.ARRAY_BUFFER, 8 * index, flatten(vertex));
 }
 
 function createRectangle(event) {
@@ -58,7 +58,7 @@ function createRectangle(event) {
 	polygons.push(rectangle);
 
 	addColorToBuffer(rectangle.color, 4);
-	addVertexToBuffer(rectangle.vertices, 4);
+	addVertexToBuffer(rectangle.vertices);
 	index += 4;
 
 	render();
