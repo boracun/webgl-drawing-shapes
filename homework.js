@@ -64,6 +64,17 @@ function createRectangle(event) {
 	render();
 }
 
+function createTriangle(event) {
+	let triangle = new Triangle(clickPosition, getClickPosition(event), vec4(colors[colorIndex]));
+	polygons.push(triangle);
+
+	addColorToBuffer(triangle.color, 3);
+	addVertexToBuffer(triangle.vertices, 3);
+	index += 3;
+
+	render();
+}
+
 function completePolygon() {
 	if (polygonStart) {
 		// Remove the last elements from the polygon array if any other option is chosen
@@ -188,6 +199,9 @@ window.onload = function init() {
 			// Rectangle draw mode
 			case DRAW_RECTANGLE:
 				createRectangle(event);
+				break;
+			case DRAW_TRIANGLE:
+				createTriangle(event);
 				break;
 			default:
 				break;
