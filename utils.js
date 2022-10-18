@@ -1,3 +1,17 @@
+class SceneState {
+    index;
+    vertexArray;
+    colorArray;
+    polygons;
+
+    constructor(index, vertexArray, colorArray, polygons) {
+        this.index = index;
+        this.vertexArray = vertexArray;
+        this.colorArray = colorArray;
+        this.polygons = polygons;
+    }
+}
+
 class Polygon {
     vertices;
     color;

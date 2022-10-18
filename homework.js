@@ -20,6 +20,9 @@ var colorArray = [];
 var vertexBuffer;
 var colorBuffer;
 
+var stateHistory = [];
+var stateIndex = null;
+
 function getClickPosition(event) {
 	return vec2(2 * event.clientX / canvas.width - 1, 2 * (canvas.height - event.clientY) / canvas.height - 1);
 }
@@ -61,6 +64,7 @@ function createRectangle(event) {
 	addVertexToBuffer(rectangle.vertices);
 	index += 4;
 
+	addNewState();
 	render();
 }
 
@@ -72,6 +76,7 @@ function createTriangle(event) {
 	addVertexToBuffer(triangle.vertices);
 	index += 3;
 
+	addNewState();
 	render();
 }
 
@@ -87,6 +92,7 @@ function completePolygon() {
 		}
 
 		polygonStart = false;
+		addNewState();
 		render();
 	}
 }
@@ -142,6 +148,47 @@ function addPolygonVertex(event) {
 	render();
 }
 
+function addNewState() {
+	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
+	let currentStateData = JSON.stringify(currentState);
+
+	if (stateIndex == null) {
+		stateHistory = [currentStateData];
+		stateIndex = 0;
+		return;
+	}
+
+	// Remove the latest states until the current state
+	for (let i = 0; i < stateHistory.length - 1 - stateIndex; i++) {
+		stateHistory.pop();
+	}
+
+	// Remove the oldest state if there are 5 states
+	if (stateHistory.length === 5) {
+		stateHistory.shift();
+	}
+
+	// Add the current state
+	stateHistory.push(currentStateData);
+	stateIndex = stateHistory.length - 1;
+}
+
+function undo() {
+	if(stateIndex === 0)
+		return;
+
+	// Deep copy the previous state and change the program values to the copy's values
+	stateIndex--;
+	let currentState = JSON.parse(stateHistory[stateIndex]);
+
+	index = currentState.index;
+	vertexArray = currentState.vertexArray;
+	colorArray = currentState.colorArray;
+	polygons = currentState.polygons;
+
+	render();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -160,6 +207,9 @@ window.onload = function init() {
 		if (controlIndex != CREATE_POLYGON) {
 			completePolygon();
 		}
+
+		if (controlIndex == UNDO)
+			undo();
 	});
 	
 	colorMenu.addEventListener("click", function() {
@@ -247,6 +297,8 @@ window.onload = function init() {
     var vColor = gl.getAttribLocation(program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
+
+	addNewState();
 }
 
 function render() {
@@ -259,8 +311,6 @@ function render() {
         gl.drawArrays(gl.TRIANGLE_FAN, startIndex, polygons[i].vertices.length);
 		startIndex += polygons[i].vertices.length;
     }
-
-	console.log(polygons);
 }
 /*
 function createConvexPolygon(vertices, length)
