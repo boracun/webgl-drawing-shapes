@@ -163,8 +163,8 @@ function addNewState() {
 		stateHistory.pop();
 	}
 
-	// Remove the oldest state if there are 5 states
-	if (stateHistory.length === 5) {
+	// Remove the oldest state if there are 6 states
+	if (stateHistory.length === 6) {
 		stateHistory.shift();
 	}
 
@@ -194,7 +194,7 @@ function undo() {
 }
 
 function redo() {
-	if(stateIndex === 4)
+	if(stateIndex === 5)
 		return;
 
 	stateIndex++;
