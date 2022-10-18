@@ -150,7 +150,7 @@ function addPolygonVertex(event) {
 
 function addNewState() {
 	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
-	let currentStateData = JSON.stringify(currentState);
+	let currentStateData = JSON.stringify(currentState, null, 2);
 
 	if (stateIndex == null) {
 		stateHistory = [currentStateData];
@@ -201,6 +201,15 @@ function redo() {
 	loadCurrentState();
 }
 
+function downloadScene() {
+	let jsonString = 'data:text/json;charset=utf-8,' + encodeURIComponent(stateHistory[stateIndex]);
+	let linkElement = document.getElementById('download-link');
+
+	linkElement.setAttribute("href", jsonString);
+	linkElement.setAttribute("download", "scene_" + new Date().toLocaleString() + ".json");
+	linkElement.click();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -226,6 +235,9 @@ window.onload = function init() {
 				break;
 			case REDO:
 				redo();
+				break;
+			case SAVE_SCENE:
+				downloadScene();
 				break;
 			default:
 				break;
