@@ -189,6 +189,21 @@ function undo() {
 	render();
 }
 
+function redo() {
+	if(stateIndex === 4)
+		return;
+
+	stateIndex++;
+	let currentState = JSON.parse(stateHistory[stateIndex]);
+
+	index = currentState.index;
+	vertexArray = currentState.vertexArray;
+	colorArray = currentState.colorArray;
+	polygons = currentState.polygons;
+
+	render();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -208,8 +223,16 @@ window.onload = function init() {
 			completePolygon();
 		}
 
-		if (controlIndex == UNDO)
-			undo();
+		switch (controlIndex) {
+			case UNDO:
+				undo();
+				break;
+			case REDO:
+				redo();
+				break;
+			default:
+				break;
+		}
 	});
 	
 	colorMenu.addEventListener("click", function() {
