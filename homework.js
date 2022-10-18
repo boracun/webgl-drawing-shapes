@@ -23,6 +23,8 @@ var colorBuffer;
 var stateHistory = [];
 var stateIndex = null;
 
+var uploadedJson;
+
 function getClickPosition(event) {
 	return vec2(2 * event.clientX / canvas.width - 1, 2 * (canvas.height - event.clientY) / canvas.height - 1);
 }
@@ -150,7 +152,7 @@ function addPolygonVertex(event) {
 
 function addNewState() {
 	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
-	let currentStateData = JSON.stringify(currentState);
+	let currentStateData = JSON.stringify(currentState, null, 2);
 
 	if (stateIndex == null) {
 		stateHistory = [currentStateData];
@@ -173,14 +175,24 @@ function addNewState() {
 	stateIndex = stateHistory.length - 1;
 }
 
-function loadCurrentState() {
+function loadState(stateJson, refillBuffers = false) {
 	// Get the current state from the history array and update the program values with current state values
-	let currentState = JSON.parse(stateHistory[stateIndex]);
+	let currentState = JSON.parse(stateJson);
 
 	index = currentState.index;
 	vertexArray = currentState.vertexArray;
 	colorArray = currentState.colorArray;
 	polygons = currentState.polygons;
+
+	// Need to clear the buffers and refill them with the new polygons array
+	if (refillBuffers) {
+		index = 0;
+		for (let i = 0; i < polygons.length; i++) {
+			addColorToBuffer(polygons[i].color, polygons[i].vertices.length);
+			addVertexToBuffer(polygons[i].vertices);
+			index += polygons[i].vertices.length;
+		}
+	}
 
 	render();
 }
@@ -190,15 +202,31 @@ function undo() {
 		return;
 
 	stateIndex--;
-	loadCurrentState();
+	loadState(stateHistory[stateIndex]);
 }
 
 function redo() {
-	if(stateIndex === 5)
+	if(stateIndex === 5 || stateIndex >= stateHistory.length - 1)
 		return;
 
 	stateIndex++;
-	loadCurrentState();
+	loadState(stateHistory[stateIndex]);
+}
+
+function downloadScene() {
+	let jsonString = 'data:text/json;charset=utf-8,' + encodeURIComponent(stateHistory[stateIndex]);
+	let linkElement = document.getElementById('download-link');
+
+	linkElement.setAttribute("href", jsonString);
+	linkElement.setAttribute("download", "scene_" + new Date().toLocaleString() + ".json");
+	linkElement.click();
+}
+
+function uploadScene() {
+	// Scene is loaded with uploadedJson
+	stateHistory = [uploadedJson];
+	stateIndex = 0;
+	loadState(uploadedJson, true);
 }
 
 window.onload = function init() {
@@ -227,6 +255,12 @@ window.onload = function init() {
 			case REDO:
 				redo();
 				break;
+			case SAVE_SCENE:
+				downloadScene();
+				break;
+			case LOAD_SCENE:
+				uploadScene();
+				break;
 			default:
 				break;
 		}
@@ -241,6 +275,19 @@ window.onload = function init() {
 		// If the button is clicked, then end the polygon drawing process
 		completePolygon();
     });
+
+	// The element used for uploading the json files
+	const fileInputElement = document.getElementById("file-input");
+	fileInputElement.addEventListener("change", function () {
+		let reader = new FileReader();
+
+		// When a new json is uploaded, the uploadedJson variable is updated
+		reader.onload = function () {
+			uploadedJson = reader.result;
+		};
+
+		reader.readAsText(this.files[0]);
+	});
 
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
