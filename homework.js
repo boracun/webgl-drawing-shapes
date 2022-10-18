@@ -173,12 +173,8 @@ function addNewState() {
 	stateIndex = stateHistory.length - 1;
 }
 
-function undo() {
-	if(stateIndex === 0)
-		return;
-
-	// Deep copy the previous state and change the program values to the copy's values
-	stateIndex--;
+function loadCurrentState() {
+	// Get the current state from the history array and update the program values with current state values
 	let currentState = JSON.parse(stateHistory[stateIndex]);
 
 	index = currentState.index;
@@ -189,19 +185,20 @@ function undo() {
 	render();
 }
 
+function undo() {
+	if(stateIndex === 0)
+		return;
+
+	stateIndex--;
+	loadCurrentState();
+}
+
 function redo() {
 	if(stateIndex === 4)
 		return;
 
 	stateIndex++;
-	let currentState = JSON.parse(stateHistory[stateIndex]);
-
-	index = currentState.index;
-	vertexArray = currentState.vertexArray;
-	colorArray = currentState.colorArray;
-	polygons = currentState.polygons;
-
-	render();
+	loadCurrentState();
 }
 
 window.onload = function init() {
