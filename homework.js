@@ -92,9 +92,10 @@ function completePolygon() {
 			// Remove the last polygon from polygons
 			polygons.pop();
 		}
+		else
+			addNewState();
 
 		polygonStart = false;
-		addNewState();
 		render();
 	}
 }
