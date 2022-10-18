@@ -206,7 +206,7 @@ function undo() {
 }
 
 function redo() {
-	if(stateIndex === 5)
+	if(stateIndex === 5 || stateIndex >= stateHistory.length - 1)
 		return;
 
 	stateIndex++;
