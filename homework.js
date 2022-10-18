@@ -123,28 +123,50 @@ function addPolygonVertex(event) {
 
 	console.log(vertex);
 	/**
-	 // Fill the vertex array
-	 vertexArray[index] = vertex;
-
-	 // Obtain the starting and ending vertices to create a convex polygon
-	 var startIndex = index - numIndices[numPolygons-1];
-	 var endIndex = index;
-
-	 var vertexCount = numIndices[numPolygons-1] + 1;
-	 var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
-
-	 // Bind the vertex buffer to send vertex data to GPU
-	 gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-
-	 console.log(vertexArray[0][0]);
-	 console.log(vertexArray[0][1]);
-
-	 for ( var count = 0; count < vertexCount; count++ )
-	 {
-				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
-				console.log(inorderVertex);
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
+	 // Obtain the vertex
+			t  = vec2(2*event.clientX/canvas.width-1, 
+			   2*(canvas.height-event.clientY)/canvas.height-1);
+			  
+			// Bind the vertex buffer to send vertex data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
+			
+			// Fill the vertex array		
+			vertexArray[index] = t;
+			
+			// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
+			var startIndex = start[numPolygons - 1];
+			var endIndex = index + 1; // do not include
+			var vertexCount = numIndices[numPolygons-1] + 1;			
+			
+			deepCopyVertexArray = [];
+			for ( var i = startIndex; i < endIndex; i++)
+				deepCopyVertexArray[i - startIndex] = vertexArray[i];
+			
+			console.log(vertexArray);
+			console.log(deepCopyVertexArray);
+			// Obtain the convex polygon with given vertices
+			var convexVertices = createConvexPolygon(deepCopyVertexArray);
+			
+			//console.log(convexVertices);
+			
+			// Bind the vertex buffer to send the corrected vertices data to GPU
+			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+			
+			for ( var count = 0; count < vertexCount; count++ )
+			{
+				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(convexVertices[count]));
 			}
+			
+			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
+			// Increasing the count of vertices corresponding to the current polygon
+			numIndices[numPolygons-1]++;
+			index++;
+			
+			for (var i = 0; i < vertexCount; i++)
+				vertexArray[index - vertexCount + i] = convexVertices[i];
+			
+			//console.log(vertexArray);
 	 */
 	index++;
 
@@ -381,11 +403,137 @@ function render() {
     }
 }
 /*
-function createConvexPolygon(vertices, length)
+function createConvexPolygon(vertices)
 {
-	//for (var i = 0; i < length; i++)
-		//console.log(vertices[i]);
+	var convexVertices = [];
+	var length = vertices.length;
 	
-	return vertices;
+	if (length > 3)
+	{
+		var lastPoint = vertices[length - 1];
+
+		var distances = [];
+		
+		var lastX = lastPoint[0];
+		var lastY = lastPoint[1];
+			
+		for (var i = 0; i < length - 1; i++)
+		{
+			var currentPoint = vertices[i];
+					
+			var currentX = currentPoint[0];
+			var currentY = currentPoint[1];
+			
+			var distance = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
+			distances[i] = distance;
+		}
+		
+		// Find the minimum distance and the corresponding index of the vertex
+		var minIndex = 0;
+		var minimum = distances[0];
+		
+		for (var i = 0; i < length - 1; i++)
+		{
+			if ( distances[i] < minimum )
+			{
+				minIndex = i;
+				minimum = distances[i];
+			}
+		}
+		
+		console.log(minIndex);
+		
+		var possibleLeft;
+		var possibleRight;
+		var leftIndex;
+		var rightIndex;
+		var leftX;
+		var leftY;
+		var rightX;
+		var rightY;
+		
+		var middleX = vertices[minIndex][0];
+		var middleY = vertices[minIndex][1];
+		
+		// Find the possible next vertices (left and right)
+		if (minIndex == 0)
+		{
+			leftIndex = length - 2;
+			rightIndex = minIndex + 1;
+		}
+		else if (minIndex == length - 2)
+		{
+			rightIndex = 0;
+			leftIndex = minIndex - 1;
+		}
+		else
+		{
+			leftIndex = minIndex - 1;
+			rightIndex = minIndex + 1;
+		}
+		
+		possibleLeft = vertices[leftIndex];
+		possibleRight = vertices[rightIndex];
+		
+		// Calculate the minimum distance from the possible next vertex
+		leftX = possibleLeft[0]; 
+		leftY = possibleLeft[1]; 
+		rightX = possibleRight[0];
+		rightY = possibleRight[1];
+		
+		
+		var intersect = intersects(lastX, lastY, leftX, leftY, rightX, rightY, middleX, middleY);
+		
+		
+		// Finalize the left and right vertices
+		if ( intersect )
+			leftIndex = minIndex;
+		
+		else
+			rightIndex = minIndex;
+			
+			
+		// Place the last vertex to where it belongs
+		if (rightIndex != 0)
+		{
+			for ( var currentIndex = 0; currentIndex <= leftIndex; currentIndex++ )
+				convexVertices[currentIndex] = vertices[currentIndex];
+				
+			convexVertices[leftIndex + 1] = lastPoint;
+			
+			for ( var currentIndex = rightIndex; currentIndex < length - 1; currentIndex++)
+				convexVertices[currentIndex + 1] = vertices[currentIndex];
+		}
+		else
+		{
+			for ( var currentIndex = 0; currentIndex < length; currentIndex++ )
+				convexVertices[currentIndex] = vertices[currentIndex];
+		}
+			
+			
+	}
+	
+	else
+	{
+		for ( var currentIndex = 0; currentIndex < length; currentIndex++ )
+			convexVertices[currentIndex] = vertices[currentIndex];
+	}
+	
+	//console.log(convexVertices);
+	return convexVertices;
 }
 */
+function intersects(a,b,c,d,p,q,r,s)
+{
+	var det, gamma, lambda;
+    det = (c - a) * (s - q) - (r - p) * (d - b);
+	if (det === 0) {
+		return false;
+	} 
+	else
+	{
+		lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+		gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+	}
+}
