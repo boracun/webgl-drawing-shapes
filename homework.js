@@ -27,8 +27,16 @@ var stateIndex = null;
 
 var uploadedJson;
 
+var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
+var scaleAmount = vec3(1, 1, 0);
+
 function getClickPosition(event) {
-	return vec2(2 * event.clientX / canvas.width - 1, 2 * (canvas.height - event.clientY) / canvas.height - 1);
+	let xComponent = 2 * event.clientX / canvas.width - 1;
+	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+
+	xComponent /= scaleAmount[0];
+	yComponent /= scaleAmount[0];
+	return vec2(xComponent, yComponent);
 }
 
 function getUniqueColor() {
@@ -325,7 +333,7 @@ window.onload = function init() {
 		reader.readAsText(this.files[0]);
 	});
 
-	// Mouse click
+	// Mouse left click
 	canvas.addEventListener("click", function (event) {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
@@ -333,10 +341,27 @@ window.onload = function init() {
 				let objectToBeDeleted = polygons[0];
 				remove(objectToBeDeleted);
 				break;
+			case ZOOM:
+				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
 			default:
 				break;
 		}
-	})
+	});
+
+	// Mouse right click
+	canvas.addEventListener("contextmenu", function (event) {
+		event.preventDefault();	// Disable right click menu
+		switch (controlIndex) {
+			case ZOOM:
+				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
+			default:
+				break;
+		}
+	});
 
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
@@ -434,8 +459,9 @@ function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-	let translationMatrix = translate(0.25, 0.25, 0);
-	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(translationMatrix));
+	// let translationMatrix = translate(0.25, 0.25, 0);
+	let scaleMatrix = scale(scaleAmount);
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(scaleMatrix));
 
 	// Drawing each polygon
 	let startIndex = 0;
