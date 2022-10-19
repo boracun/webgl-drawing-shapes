@@ -14,20 +14,37 @@ var polygons = [];
 var polygonStart = false;
 var clickPosition = null;
 var mouseHasMoved = false;
+var zoomPosition = vec2(0, 0);
 
 var vertexArray = [];
 var colorArray = [];
 
 var vertexBuffer;
 var colorBuffer;
+var transformationMatrixLocation;
 
 var stateHistory = [];
 var stateIndex = null;
 
 var uploadedJson;
 
-function getClickPosition(event) {
-	return vec2(2 * event.clientX / canvas.width - 1, 2 * (canvas.height - event.clientY) / canvas.height - 1);
+var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
+var scaleAmount = vec3(1, 1, 0);
+
+var translationAmount = vec3(0, 0, 0);
+
+function getClickPosition(event, offset = vec2(0, 0)) {
+	let xComponent = 2 * event.clientX / canvas.width - 1;
+	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
+
+	xComponent /= scaleAmount[0];
+	yComponent /= scaleAmount[0];
+
+	let result = vec2(xComponent, yComponent);
+	result = subtract(result, vec2(translationAmount[0], translationAmount[1]));
+	result = add(result, offset);
+
+	return result;
 }
 
 function getUniqueColor() {
@@ -175,6 +192,18 @@ function addPolygonVertex(event) {
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
+function translatePolygon(polygon, event) {
+	let position2 = getClickPosition(event);
+	let positionDiff = subtract(position2, clickPosition);
+	for (let i = 0; i < polygon.vertices.length; i++) {
+		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
+// Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
 function remove(polygon) {
 	let elementIndex = polygons.indexOf(polygon);
 
@@ -264,6 +293,14 @@ function uploadScene() {
 	loadState(uploadedJson, true);
 }
 
+function translateSpace(event) {
+	let position2 = getClickPosition(event);
+	let positionDiff = subtract(position2, clickPosition);
+
+	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
+	render();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -324,7 +361,7 @@ window.onload = function init() {
 		reader.readAsText(this.files[0]);
 	});
 
-	// Mouse click
+	// Mouse left click
 	canvas.addEventListener("click", function (event) {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
@@ -335,14 +372,24 @@ window.onload = function init() {
 			default:
 				break;
 		}
-	})
+	});
+
+	// Mouse right click
+	canvas.addEventListener("contextmenu", function (event) {
+		event.preventDefault();	// Disable right click menu
+		switch (controlIndex) {
+			default:
+				break;
+		}
+	});
 
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
 		switch (controlIndex) {
-			// Rectangle draw mode
-			case DRAW_RECTANGLE:
-			case DRAW_TRIANGLE:
+			case DRAW_RECTANGLE:	// Rectangle draw mode
+			case DRAW_TRIANGLE:		// Triangle draw mode
+			case MOVE_OBJECT:		// Start of object movement
+			case ZOOM:				// Start of move-around
 				clickPosition = getClickPosition(event);
 				break;
 			// If an object is wanted to be created
@@ -374,6 +421,18 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
+			case MOVE_OBJECT:
+				if (mouseHasMoved)
+					translatePolygon(polygons[0], event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
+			case ZOOM:
+				if (mouseHasMoved)
+					translateSpace(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
 			default:
 				break;
 		}
@@ -382,17 +441,30 @@ window.onload = function init() {
 	// Used only for moving an object
 	canvas.addEventListener("mousemove", function(event){
 		switch (controlIndex) {
-			// Detect drag for rectangle and triangle
+			// Detect drag
 			case DRAW_RECTANGLE:
 			case DRAW_TRIANGLE:
-				mouseHasMoved = (clickPosition !== null);
-				break;
 			case MOVE_OBJECT:
+			case ZOOM:
+				mouseHasMoved = (clickPosition !== null);
 				break;
 			default:
 				break;
 		}
 	});
+
+	document.addEventListener('keydown', function(event) {
+		if (event.keyCode === 37) {
+			scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+		else if (event.keyCode === 39) {
+			scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+	}, true);
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
@@ -424,12 +496,24 @@ window.onload = function init() {
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
+	transformationMatrixLocation = gl.getUniformLocation(program, "transformationMatrix");
+
 	addNewState();
 }
 
 function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
+	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+	let scaleMatrix = scale(scaleAmount);
+	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
+	let transformationMatrix = mult(translationMatrix, scaleMatrix);
+	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
+
+	// console.log(zoomPosition);
 
 	// Drawing each polygon
 	let startIndex = 0;

@@ -10,9 +10,11 @@
 
 	varying vec4 fColor;
 
+	uniform mat4 transformationMatrix;
+
 	void main()
 	{
-		gl_Position = vPosition;
+		gl_Position = transformationMatrix * vPosition;
 		fColor = vColor;
 	}
 	</script>
