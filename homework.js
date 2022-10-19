@@ -12,7 +12,8 @@ var colorIndex = 0;
 var polygons = [];
 
 var polygonStart = false;
-var clickPosition;
+var clickPosition = null;
+var mouseHasMoved = false;
 
 var vertexArray = [];
 var colorArray = [];
@@ -362,25 +363,36 @@ window.onload = function init() {
 		switch (controlIndex) {
 			// Rectangle draw mode
 			case DRAW_RECTANGLE:
-				createRectangle(event);
+				if (mouseHasMoved)
+					createRectangle(event);
+				clickPosition = null;
+				mouseHasMoved = false;
 				break;
 			case DRAW_TRIANGLE:
-				createTriangle(event);
+				if (mouseHasMoved)
+					createTriangle(event);
+				clickPosition = null;
+				mouseHasMoved = false;
 				break;
 			default:
 				break;
 		}
 	});
 
-	/*
 	// Used only for moving an object
 	canvas.addEventListener("mousemove", function(event){
-		if ( controlIndex == MOVE_OBJECT )
-		{}
-      }
-
-    } );
-	*/
+		switch (controlIndex) {
+			// Detect drag for rectangle and triangle
+			case DRAW_RECTANGLE:
+			case DRAW_TRIANGLE:
+				mouseHasMoved = (clickPosition !== null);
+				break;
+			case MOVE_OBJECT:
+				break;
+			default:
+				break;
+		}
+	});
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
