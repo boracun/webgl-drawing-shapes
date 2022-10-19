@@ -173,6 +173,16 @@ function addPolygonVertex(event) {
 	render();
 }
 
+// Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
+function remove(polygon) {
+	let elementIndex = polygons.indexOf(polygon);
+
+	// Remove that element
+	polygons.splice(elementIndex, 1);
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
 function addNewState() {
 	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
 	let currentStateData = JSON.stringify(currentState, null, 2);
@@ -226,7 +236,7 @@ function undo() {
 		return;
 
 	stateIndex--;
-	loadState(stateHistory[stateIndex]);
+	loadState(stateHistory[stateIndex], true);
 }
 
 function redo() {
@@ -234,7 +244,7 @@ function redo() {
 		return;
 
 	stateIndex++;
-	loadState(stateHistory[stateIndex]);
+	loadState(stateHistory[stateIndex], true);
 }
 
 function downloadScene() {
@@ -312,6 +322,19 @@ window.onload = function init() {
 
 		reader.readAsText(this.files[0]);
 	});
+
+	// Mouse click
+	canvas.addEventListener("click", function (event) {
+		switch (controlIndex) {
+			case REMOVE_OBJECT:
+				// TODO: Pass the object to be deleted here (implement here after the object selection method)
+				let objectToBeDeleted = polygons[0];
+				remove(objectToBeDeleted);
+				break;
+			default:
+				break;
+		}
+	})
 
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
