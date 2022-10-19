@@ -14,13 +14,14 @@ var polygons = [];
 var polygonStart = false;
 var clickPosition = null;
 var mouseHasMoved = false;
+var zoomPosition = vec2(0, 0);
 
 var vertexArray = [];
 var colorArray = [];
 
 var vertexBuffer;
 var colorBuffer;
-var transformationMatrixLocation
+var transformationMatrixLocation;
 
 var stateHistory = [];
 var stateIndex = null;
@@ -30,13 +31,17 @@ var uploadedJson;
 var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
 var scaleAmount = vec3(1, 1, 0);
 
-function getClickPosition(event) {
+function getClickPosition(event, offset = vec2(0, 0)) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
 
 	xComponent /= scaleAmount[0];
 	yComponent /= scaleAmount[0];
-	return vec2(xComponent, yComponent);
+
+	let result = vec2(xComponent, yComponent);
+	result = add(result, offset);
+
+	return result;
 }
 
 function getUniqueColor() {
@@ -343,6 +348,7 @@ window.onload = function init() {
 				break;
 			case ZOOM:
 				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+				zoomPosition = getClickPosition(event);
 				render();
 				break;
 			default:
@@ -356,6 +362,7 @@ window.onload = function init() {
 		switch (controlIndex) {
 			case ZOOM:
 				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+				zoomPosition = getClickPosition(event);
 				render();
 				break;
 			default:
@@ -459,9 +466,14 @@ function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-	// let translationMatrix = translate(0.25, 0.25, 0);
+	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
 	let scaleMatrix = scale(scaleAmount);
-	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(scaleMatrix));
+	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
+	let transformationMatrix = mult(scaleMatrix, mat4());
+	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
+
+	// console.log(zoomPosition);
 
 	// Drawing each polygon
 	let startIndex = 0;
