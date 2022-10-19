@@ -20,6 +20,7 @@ var colorArray = [];
 
 var vertexBuffer;
 var colorBuffer;
+var transformationMatrixLocation
 
 var stateHistory = [];
 var stateIndex = null;
@@ -424,12 +425,17 @@ window.onload = function init() {
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
+	transformationMatrixLocation = gl.getUniformLocation(program, "transformationMatrix");
+
 	addNewState();
 }
 
 function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+	let translationMatrix = translate(0.25, 0.25, 0);
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(translationMatrix));
 
 	// Drawing each polygon
 	let startIndex = 0;
