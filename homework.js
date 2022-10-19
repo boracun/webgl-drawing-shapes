@@ -369,11 +369,6 @@ window.onload = function init() {
 				let objectToBeDeleted = polygons[0];
 				remove(objectToBeDeleted);
 				break;
-			case ZOOM:
-				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
-				zoomPosition = getClickPosition(event);
-				render();
-				break;
 			default:
 				break;
 		}
@@ -383,11 +378,6 @@ window.onload = function init() {
 	canvas.addEventListener("contextmenu", function (event) {
 		event.preventDefault();	// Disable right click menu
 		switch (controlIndex) {
-			case ZOOM:
-				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
-				zoomPosition = getClickPosition(event);
-				render();
-				break;
 			default:
 				break;
 		}
@@ -462,6 +452,19 @@ window.onload = function init() {
 				break;
 		}
 	});
+
+	document.addEventListener('keydown', function(event) {
+		if (event.keyCode === 37) {
+			scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+		else if (event.keyCode === 39) {
+			scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+	}, true);
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
