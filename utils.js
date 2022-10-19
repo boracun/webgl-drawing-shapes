@@ -48,7 +48,7 @@ class Triangle extends Polygon {
         }
 
         let topX = (begin[0] + end[0]) / 2;
-        let topY = (Math.abs(end[0] - begin[0]) * Math.sqrt(3) / 2) + end[1];
+        let topY = (Math.abs(end[0] - begin[0]) * Math.sqrt(3)) + end[1];
         this.vertices.push(vec2(topX, topY));
         this.vertices.push(vec2(begin[0], end[1]));
         this.vertices.push(end);
