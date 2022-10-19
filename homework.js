@@ -174,6 +174,17 @@ function addPolygonVertex(event) {
 	render();
 }
 
+function translatePolygon(polygon, event) {
+	let position2 = getClickPosition(event);
+	let positionDiff = subtract(position2, clickPosition);
+	for (let i = 0; i < polygon.vertices.length; i++) {
+		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
 function remove(polygon) {
 	let elementIndex = polygons.indexOf(polygon);
@@ -340,9 +351,9 @@ window.onload = function init() {
 	// Mousedown
     canvas.addEventListener("mousedown", function(event) {
 		switch (controlIndex) {
-			// Rectangle draw mode
-			case DRAW_RECTANGLE:
-			case DRAW_TRIANGLE:
+			case DRAW_RECTANGLE:	// Rectangle draw mode
+			case DRAW_TRIANGLE:		// Triangle draw mode
+			case MOVE_OBJECT:		// Start of object movement
 				clickPosition = getClickPosition(event);
 				break;
 			// If an object is wanted to be created
@@ -374,6 +385,12 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
+			case MOVE_OBJECT:
+				if (mouseHasMoved)
+					translatePolygon(polygons[0], event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
 			default:
 				break;
 		}
@@ -382,12 +399,11 @@ window.onload = function init() {
 	// Used only for moving an object
 	canvas.addEventListener("mousemove", function(event){
 		switch (controlIndex) {
-			// Detect drag for rectangle and triangle
+			// Detect drag
 			case DRAW_RECTANGLE:
 			case DRAW_TRIANGLE:
-				mouseHasMoved = (clickPosition !== null);
-				break;
 			case MOVE_OBJECT:
+				mouseHasMoved = (clickPosition !== null);
 				break;
 			default:
 				break;
