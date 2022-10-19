@@ -184,7 +184,8 @@ function addNewState() {
 	}
 
 	// Remove the latest states until the current state
-	for (let i = 0; i < stateHistory.length - 1 - stateIndex; i++) {
+	let stateHistoryLength = stateHistory.length;
+	for (let i = 0; i < stateHistoryLength - 1 - stateIndex; i++) {
 		stateHistory.pop();
 	}
 
