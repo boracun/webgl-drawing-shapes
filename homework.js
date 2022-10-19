@@ -31,6 +31,8 @@ var uploadedJson;
 var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
 var scaleAmount = vec3(1, 1, 0);
 
+var translationAmount = vec3(0, 0, 0);
+
 function getClickPosition(event, offset = vec2(0, 0)) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
@@ -188,6 +190,7 @@ function addPolygonVertex(event) {
 	render();
 }
 
+// Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
 function translatePolygon(polygon, event) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
@@ -289,6 +292,14 @@ function uploadScene() {
 	loadState(uploadedJson, true);
 }
 
+function translateSpace(event) {
+	let position2 = getClickPosition(event);
+	let positionDiff = subtract(position2, clickPosition);
+
+	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
+	render();
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -387,6 +398,7 @@ window.onload = function init() {
 			case DRAW_RECTANGLE:	// Rectangle draw mode
 			case DRAW_TRIANGLE:		// Triangle draw mode
 			case MOVE_OBJECT:		// Start of object movement
+			case ZOOM:				// Start of move-around
 				clickPosition = getClickPosition(event);
 				break;
 			// If an object is wanted to be created
@@ -424,6 +436,12 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
+			case ZOOM:
+				if (mouseHasMoved)
+					translateSpace(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
 			default:
 				break;
 		}
@@ -436,6 +454,7 @@ window.onload = function init() {
 			case DRAW_RECTANGLE:
 			case DRAW_TRIANGLE:
 			case MOVE_OBJECT:
+			case ZOOM:
 				mouseHasMoved = (clickPosition !== null);
 				break;
 			default:
@@ -483,9 +502,10 @@ function render() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
 	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
+	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
 	let scaleMatrix = scale(scaleAmount);
 	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
-	let transformationMatrix = mult(scaleMatrix, mat4());
+	let transformationMatrix = mult(translationMatrix, scaleMatrix);
 	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
 	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
 
