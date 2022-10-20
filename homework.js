@@ -176,7 +176,6 @@ function addPolygonVertex(event) {
 			
 			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			// Increasing the count of vertices corresponding to the current polygon
-			numIndices[polygons.length-1]++;
 			index++;
 			
 			for (var i = 0; i < vertexCount; i++)
@@ -700,8 +699,10 @@ function createConvexPolygon(vertices)
 			var coefficients = mat2(x1, x2, y1, y2);
 			var rightHandSide = vec2(x0, y0);
 			var inverseOfCoefficients = inverse(coefficients);
-			
-			var solution = mult(rightHandSide, inverseOfCoefficients);
+			console.log(rightHandSide);
+			console.log(inverseOfCoefficients);
+			console.log(rightHandSide.length, inverseOfCoefficients.length);
+			var solution = mult(inverseOfCoefficients, rightHandSide);
 			
 			var a = solution[0];
 			
@@ -838,4 +839,30 @@ function addSelected(selected, vertex)
 		if (check)
 			selected.push(polygons[polygonIndex]);
 	}	
+}
+
+function inverse(matrix)
+{
+	var a = matrix[0][0];
+	var b = matrix[0][1];
+	var c = matrix[1][0];
+	var d = matrix[1][1];
+	
+	var det = determinant(matrix);
+	
+	var inv = mat2(d / det, -b / det, -c / det, a / det);
+	
+	return inv;
+}
+
+function determinant(matrix)
+{
+	var a = matrix[0][0];
+	var b = matrix[0][1];
+	var c = matrix[1][0];
+	var d = matrix[1][1];
+	
+	var det = 1 / (a * d - b * c);
+	
+	return det;
 }
