@@ -613,22 +613,80 @@ function createConvexPolygon(vertices)
 	if (length > 3)
 	{
 		var lastPoint = vertices[length - 1];
+		
+		// Coordinates of the last point
+		var x = lastPoint[0];
+		var y = lastPoint[1];
 
 		var distances = [];
 		
-		var lastX = lastPoint[0];
-		var lastY = lastPoint[1];
-			
-		for (var i = 0; i < length - 1; i++)
+		
+		for (var i = 0; i <= length - 3; i++)
 		{
-			var currentPoint = vertices[i];
-					
-			var currentX = currentPoint[0];
-			var currentY = currentPoint[1];
+			// Two consecutive points
+			var P1 = vertices[i];
+			var P2 = vertices[i+1];
 			
-			var distance = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
-			distances[i] = distance;
+			// Coordinates of the corresponding points
+			var x1 = P1[0];
+			var y1 = P1[1];
+			var x2 = P2[0];
+			var y2 = P2[1];
+			
+			// Line coefficients through P1 and P2
+			var A = y2 - y1;
+			var B = x1 - x2;
+			var C = - A * x1 - B * y1;
+			
+			///
+			FIRST ALGORITHM: For each line through two consecutive points, find the closest one on that
+			line to the given vertex.
+			//		
+			
+			// The slope of the line and the normal to that line
+			m1 = -A / B;
+			m2 = -1 / m1;
+			
+			// Coordinates of the closest point
+			var x0 = (m1 * x1 - m2 * x - y1 + y) / (m1 - m2);
+			var y0 = m2 * (x0 - x) + y;
+			
+			///
+			SECOND ALGORITHM: Check if the closest point is on the line segment through those two
+			consecutive points.
+			//
+			
+			// The function that gives the line segment is f(a) = a * P1 + (1 - a) * P2.
+			// This function is assigned to P0 and the corresponding system of linear equations
+			// is solved to find the corresponding value of a. If a < 0 or a > 0, then the point
+			// is not on the line segment.
+			
+			var coefficients = mat2(x1, x2, y1, y2);
+			var rightHandSide = vec2(x0, y0);
+			var inverseOfCoefficients = inverse(coefficients);
+			
+			var solution = mult(rightHandSide, inverseOfCoefficients);
+			
+			var a = solution[0];
+			
+			///
+			THIRD ALGORITHM: If the point in on that line segment, find the distance between the point
+			and the given vertex. Add the distance to the list, add -1 otherwise.
+			//
+			
+			if ( a < 0 | a > 1 )
+				distances[i] = -1;
+			else
+			{
+				var distance = Math.abs(A * x + B * y + C) / Math.sqrt(Math.pow(A, 2) + Math.pow(B, 2));
+				distances[i] = distance;
+			}
 		}
+
+		///
+		FOURTH ALGORITM: Find the minimum of the distances and the corresponding points. Add the vertex
+		in between these two point.
+		//
 		
 		// Find the minimum distance and the corresponding index of the vertex
 		var minIndex = 0;
@@ -643,76 +701,22 @@ function createConvexPolygon(vertices)
 			}
 		}
 		
-		console.log(minIndex);
-		
-		var possibleLeft;
-		var possibleRight;
-		var leftIndex;
-		var rightIndex;
-		var leftX;
-		var leftY;
-		var rightX;
-		var rightY;
-		
-		var middleX = vertices[minIndex][0];
-		var middleY = vertices[minIndex][1];
-		
-		// Find the possible next vertices (left and right)
-		if (minIndex == 0)
-		{
-			leftIndex = length - 2;
-			rightIndex = minIndex + 1;
-		}
-		else if (minIndex == length - 2)
-		{
-			rightIndex = 0;
-			leftIndex = minIndex - 1;
-		}
-		else
-		{
-			leftIndex = minIndex - 1;
-			rightIndex = minIndex + 1;
-		}
-		
-		possibleLeft = vertices[leftIndex];
-		possibleRight = vertices[rightIndex];
-		
-		// Calculate the minimum distance from the possible next vertex
-		leftX = possibleLeft[0]; 
-		leftY = possibleLeft[1]; 
-		rightX = possibleRight[0];
-		rightY = possibleRight[1];
-		
-		
-		var intersect = intersects(lastX, lastY, leftX, leftY, rightX, rightY, middleX, middleY);
-		
-		
-		// Finalize the left and right vertices
-		if ( intersect )
-			leftIndex = minIndex;
-		
-		else
-			rightIndex = minIndex;
-			
-			
-		// Place the last vertex to where it belongs
-		if (rightIndex != 0)
-		{
-			for ( var currentIndex = 0; currentIndex <= leftIndex; currentIndex++ )
-				convexVertices[currentIndex] = vertices[currentIndex];
-				
-			convexVertices[leftIndex + 1] = lastPoint;
-			
-			for ( var currentIndex = rightIndex; currentIndex < length - 1; currentIndex++)
-				convexVertices[currentIndex + 1] = vertices[currentIndex];
-		}
-		else
-		{
+		// If the point is where it belongs, do not change its place. Otherwise, change it.
+		if ( minIndex == length - 2 )
 			for ( var currentIndex = 0; currentIndex < length; currentIndex++ )
 				convexVertices[currentIndex] = vertices[currentIndex];
+			
+		else
+		{
+			for ( var currentIndex = 0; currentIndex <= minIndex; currentIndex++ )
+				convexVertices[currentIndex] = vertices[currentIndex];
+				
+			convexVertices[minIndex + 1] = lastPoint;
+			
+			for ( var currentIndex = minIndex + 1; currentIndex < length - 1; currentIndex++)
+				convexVertices[currentIndex + 1] = vertices[currentIndex];
+			
 		}
-			
-			
 	}
 	
 	else
