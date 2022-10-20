@@ -432,9 +432,7 @@ window.onload = function init() {
 	canvas.addEventListener("click", function (event) {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
-				// TODO: Pass the object to be deleted here (implement here after the object selection method)
-				var vertex = vec2(2*event.clientX/canvas.width-1, 
-					2*(canvas.height-event.clientY)/canvas.height-1);
+				var vertex = getClickPosition(event);
 				selected = [];
 				addSelected(selected, vertex);
 				console.log("selected objects:", selected);
@@ -496,8 +494,17 @@ window.onload = function init() {
 				mouseHasMoved = false;
 				break;
 			case MOVE_OBJECT:
-				if (mouseHasMoved)
-					translatePolygon(polygons[0], event);
+				if (mouseHasMoved) {
+					var vertex = clickPosition;
+					selected = [];
+					addSelected(selected, vertex);
+					console.log("selected objects:", selected);
+
+					if(selected.length > 0) {
+						let objectToBeTranslated = selected[selected.length - 1];
+						translatePolygon(objectToBeTranslated, event);
+					}
+				}
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
