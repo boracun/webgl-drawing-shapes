@@ -150,31 +150,21 @@ function addPolygonVertex(event) {
 	console.log(vertex);
 	/**
 	 // Obtain the vertex
-			t  = vec2(2*event.clientX/canvas.width-1, 
-			   2*(canvas.height-event.clientY)/canvas.height-1);
-			  
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			
 			// Fill the vertex array		
-			vertexArray[index] = t;
+			vertexArray[index] = vertex;
 			
 			// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
-			var startIndex = start[numPolygons - 1];
+			var startIndex = vertexArray.length - polygons[polygons.length - 1].vertices.length;
 			var endIndex = index + 1; // do not include
-			var vertexCount = numIndices[numPolygons-1] + 1;			
+			var vertexCount = polygons[polygons.length - 1].vertices.length;			
 			
-			deepCopyVertexArray = [];
+			var deepCopyVertexArray = [];
 			for ( var i = startIndex; i < endIndex; i++)
 				deepCopyVertexArray[i - startIndex] = vertexArray[i];
 			
-			console.log(vertexArray);
-			console.log(deepCopyVertexArray);
 			// Obtain the convex polygon with given vertices
 			var convexVertices = createConvexPolygon(deepCopyVertexArray);
-			
-			//console.log(convexVertices);
 			
 			// Bind the vertex buffer to send the corrected vertices data to GPU
 			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
@@ -186,11 +176,13 @@ function addPolygonVertex(event) {
 			
 			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			// Increasing the count of vertices corresponding to the current polygon
-			numIndices[numPolygons-1]++;
+			numIndices[polygons.length-1]++;
 			index++;
 			
 			for (var i = 0; i < vertexCount; i++)
 				vertexArray[index - vertexCount + i] = convexVertices[i];
+			
+			polygons[polygons.length - 1].vertices = convexVertices;
 			
 			//console.log(vertexArray);
 	 */
