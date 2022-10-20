@@ -213,6 +213,45 @@ function remove(polygon) {
 	loadState(stateHistory[stateIndex], true);
 }
 
+function calculateGeometricCenter(polygon) {
+	let vectorSum = vec2(0, 0);
+	let vertexCount = polygon.vertices.length;
+
+	for (let i = 0; i < vertexCount; i++) {
+		vectorSum = add(vectorSum, polygon.vertices[i]);
+	}
+
+	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
+}
+
+// Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
+function rotatePolygon(polygon, rotationAmount) {
+	let center = calculateGeometricCenter(polygon);
+
+	for (let i = 0; i < polygon.vertices.length; i++) {
+		let xComponent = polygon.vertices[i][0];
+		let yComponent = polygon.vertices[i][1];
+
+		xComponent -= center[0];	// Bring the center to the origin
+		yComponent -= center[1];
+
+		console.log(xComponent, yComponent);
+
+		xComponent = -Math.sin(rotationAmount) * yComponent + Math.cos(rotationAmount) * xComponent;	// Rotations around origin
+		yComponent = Math.sin(rotationAmount) * xComponent + Math.cos(rotationAmount) * yComponent;
+
+		console.log(xComponent, yComponent);
+
+		xComponent += center[0];	// Take the center back
+		yComponent += center[1];
+
+		polygon.vertices[i] = vec2(xComponent, yComponent);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
 function addNewState() {
 	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
 	let currentStateData = JSON.stringify(currentState, null, 2);
@@ -369,7 +408,13 @@ window.onload = function init() {
 				let objectToBeDeleted = polygons[0];
 				remove(objectToBeDeleted);
 				break;
+			case ROTATE_OBJECT:
+				// TODO: Pass the object to be rotated here (implement here after the object selection method)
+				let objectToRotated = polygons[0];
+				rotatePolygon(objectToRotated, Math.PI / 4);
+				break;
 			default:
+				console.log(getClickPosition(event));
 				break;
 		}
 	});
