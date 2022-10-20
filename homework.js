@@ -26,6 +26,9 @@ var transformationMatrixLocation;
 var stateHistory = [];
 var stateIndex = null;
 
+var selected = [];
+const branchAngle = Math.PI;
+
 var uploadedJson;
 
 var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
@@ -466,6 +469,11 @@ window.onload = function init() {
 				break;
 			// If an object is wanted to be selected
 			case REMOVE_OBJECT:
+				var vertex = vec2(2*event.clientX/canvas.width-1, 
+					2*(canvas.height-event.clientY)/canvas.height-1);
+				selected = [];
+				addSelected(selected, vertex);
+				console.log(selected);
 			case ROTATE_OBJECT:
 				break;
 			default:
@@ -732,4 +740,64 @@ function intersects(a,b,c,d,p,q,r,s)
 		gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
 		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
 	}
+}
+
+function isInsidePolygon(polyVertices, vertex)
+{
+	var sumReal = 0;
+	var sumImag = 0;
+	var sum = 0;
+	console.log(vertex);
+	for (var i = 1; i < polyVertices.length + 1; i++)
+	{
+		var v0 = polyVertices[i - 1];
+		var v1 = polyVertices[i % polyVertices.length];
+
+		
+		var firstReal = v1[0] - vertex[0];
+		var firstImag = v1[1] - vertex[1];
+		var firstLength = Math.sqrt(Math.pow(firstReal, 2) + Math.pow(firstImag, 2));
+		
+		var secondReal = v0[0] - vertex[0];
+		var secondImag = v0[1] - vertex[1];
+		var secondLength = Math.sqrt(Math.pow(secondReal, 2) + Math.pow(secondImag, 2));
+		
+		var firstAngle;
+		var secondAngle;
+		
+		if (firstImag < 0)
+			firstAngle = -Math.acos( firstReal / firstLength);
+		else
+			firstAngle = Math.acos( firstReal / firstLength);
+		
+		if (secondImag < 0)
+			secondAngle = -Math.acos( secondReal / secondLength);
+		else
+			secondAngle = Math.acos( secondReal / secondLength);
+		
+		var angleDif = firstAngle - secondAngle;
+		
+		if (angleDif < (-branchAngle))
+			angleDif += 2 * Math.PI;
+		else if (angleDif > branchAngle)
+			angleDif -= 2 * Math.PI;
+		
+		sumReal += Math.log(firstLength) - Math.log(secondLength);
+		sumImag += angleDif;
+		
+	}
+	
+	sum = Math.sqrt(Math.pow(sumReal, 2) + Math.pow(sumImag, 2));
+	return sum > 1;
+}
+
+function addSelected(selected, vertex)
+{
+	for (var polygonIndex = 0; polygonIndex < polygons.length; polygonIndex++)
+	{
+		var check = isInsidePolygon(polygons[polygonIndex].vertices, vertex);
+		
+		if (check)
+			selected.push(polygons[polygonIndex]);
+	}	
 }
