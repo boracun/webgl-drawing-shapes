@@ -476,12 +476,6 @@ window.onload = function init() {
 			case CREATE_POLYGON:
 				addPolygonVertex(event);
 				break;
-			// If an object is wanted to be selected
-			case REMOVE_OBJECT:
-			case ROTATE_OBJECT:
-				break;
-			default:
-				break;
 		}
     });
 
