@@ -201,6 +201,8 @@ function translatePolygon(polygon, event) {
 		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
 	}
 
+	polygon.calculateEnclosingRectangle();
+
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
 }
@@ -249,6 +251,8 @@ function rotatePolygon(polygon, rotationAmount) {
 
 		polygon.vertices[i] = vec2(xComponent, yComponent);
 	}
+
+	polygon.calculateEnclosingRectangle();
 
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -416,7 +420,6 @@ window.onload = function init() {
 				rotatePolygon(objectToRotated, Math.PI / 4);
 				break;
 			default:
-				console.log(getClickPosition(event));
 				break;
 		}
 	});
