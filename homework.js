@@ -207,6 +207,9 @@ function translatePolygon(polygon, event) {
 		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
 	}
 
+	polygons.splice(polygons.indexOf(polygon), 1);	// Remove this polygon from polygons
+	polygons.push(polygon);	// Add it to the end
+
 	calculateEnclosingRectangle(polygon);
 
 	addNewState();
@@ -220,6 +223,7 @@ function remove(polygon) {
 	// Remove that element
 	if ( elementIndex == -1 )
 		return;
+
 	polygons.splice(elementIndex, 1);
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -261,6 +265,9 @@ function rotatePolygon(polygon, rotationAmount) {
 	}
 
 	calculateEnclosingRectangle(polygon);
+
+	polygons.splice(polygons.indexOf(polygon), 1);	// Remove this polygon from polygons
+	polygons.push(polygon);	// Add it to the end
 
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
