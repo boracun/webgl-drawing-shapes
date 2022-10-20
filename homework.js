@@ -37,7 +37,7 @@ var scaleAmount = vec3(1, 1, 0);
 var translationAmount = vec3(0, 0, 0);
 
 // Careful: This array's first element is always the position where the area selection started
-var copiedPolygons;
+var copiedPolygons = [];
 
 function getClickPosition(event, offset = vec2(0, 0)) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
@@ -200,9 +200,17 @@ function addPolygonVertex(event) {
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
-function translatePolygon(polygon, event) {
-	let position2 = getClickPosition(event);
-	let positionDiff = subtract(position2, clickPosition);
+function translatePolygon(polygon, event, customOffset = null, addNewStateAfter = true) {
+	let positionDiff;
+
+	if (event !== null) {
+		let position2 = getClickPosition(event);
+		positionDiff = subtract(position2, clickPosition);
+	}
+	else {
+		positionDiff = customOffset;
+	}
+
 	for (let i = 0; i < polygon.vertices.length; i++) {
 		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
 	}
@@ -212,8 +220,10 @@ function translatePolygon(polygon, event) {
 
 	calculateEnclosingRectangle(polygon);
 
-	addNewState();
-	loadState(stateHistory[stateIndex], true);
+	if (addNewStateAfter) {
+		addNewState();
+		loadState(stateHistory[stateIndex], true);
+	}
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
@@ -375,6 +385,23 @@ function copyArea(event) {
 	}
 }
 
+function pasteSelection(event) {
+	if (copiedPolygons.length === 0)
+		return;
+
+	let copiedPolygonCount = copiedPolygons.length;
+	let offset = subtract(getClickPosition(event), copiedPolygons[0]);
+
+	for (let i = 1; i < copiedPolygonCount; i++) {
+		let copied = structuredClone(copiedPolygons[i]);
+		polygons.push(copied);
+		translatePolygon(copied, null, offset, false);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -452,6 +479,9 @@ window.onload = function init() {
 				// TODO: Pass the object to be rotated here (implement here after the object selection method)
 				let objectToRotated = polygons[0];
 				rotatePolygon(objectToRotated, Math.PI / 4);
+				break;
+			case PASTE:
+				pasteSelection(event);
 				break;
 			default:
 				break;
