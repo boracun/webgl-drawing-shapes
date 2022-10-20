@@ -37,7 +37,7 @@ var scaleAmount = vec3(1, 1, 0);
 var translationAmount = vec3(0, 0, 0);
 
 // Careful: This array's first element is always the position where the area selection started
-var copiedPolygons;
+var copiedPolygons = [];
 
 function getClickPosition(event, offset = vec2(0, 0)) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
@@ -117,7 +117,7 @@ function completePolygon() {
 			polygons.pop();
 		}
 		else {
-			polygons[polygons.length - 1].calculateEnclosingRectangle();
+			calculateEnclosingRectangle(polygons[polygons.length - 1]);
 			addNewState();
 		}
 
@@ -200,17 +200,30 @@ function addPolygonVertex(event) {
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
-function translatePolygon(polygon, event) {
-	let position2 = getClickPosition(event);
-	let positionDiff = subtract(position2, clickPosition);
+function translatePolygon(polygon, event, customOffset = null, addNewStateAfter = true) {
+	let positionDiff;
+
+	if (event !== null) {
+		let position2 = getClickPosition(event);
+		positionDiff = subtract(position2, clickPosition);
+	}
+	else {
+		positionDiff = customOffset;
+	}
+
 	for (let i = 0; i < polygon.vertices.length; i++) {
 		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
 	}
 
-	polygon.calculateEnclosingRectangle();
+	polygons.splice(polygons.indexOf(polygon), 1);	// Remove this polygon from polygons
+	polygons.push(polygon);	// Add it to the end
 
-	addNewState();
-	loadState(stateHistory[stateIndex], true);
+	calculateEnclosingRectangle(polygon);
+
+	if (addNewStateAfter) {
+		addNewState();
+		loadState(stateHistory[stateIndex], true);
+	}
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
@@ -220,6 +233,7 @@ function remove(polygon) {
 	// Remove that element
 	if ( elementIndex == -1 )
 		return;
+
 	polygons.splice(elementIndex, 1);
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -260,7 +274,10 @@ function rotatePolygon(polygon, rotationAmount) {
 		polygon.vertices[i] = vec2(xComponent, yComponent);
 	}
 
-	polygon.calculateEnclosingRectangle();
+	calculateEnclosingRectangle(polygon);
+
+	polygons.splice(polygons.indexOf(polygon), 1);	// Remove this polygon from polygons
+	polygons.push(polygon);	// Add it to the end
 
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -357,15 +374,32 @@ function translateSpace(event) {
 function copyArea(event) {
 	copiedPolygons = [];
 	copiedPolygons.push(clickPosition);
-	
+
 	let click2 = getClickPosition(event);
 	let bottomLeft = vec2(Math.min(clickPosition[0], click2[0]), Math.min(clickPosition[1], click2[1]));
 	let topRight = vec2(Math.max(clickPosition[0], click2[0]), Math.max(clickPosition[1], click2[1]));
 
 	for (let i = 0; i < polygons.length; i++) {
-		if (polygons[i].isInsideArea(bottomLeft, topRight))
+		if (isInsideArea(polygons[i], bottomLeft, topRight))
 			copiedPolygons.push(polygons[i]);
 	}
+}
+
+function pasteSelection(event) {
+	if (copiedPolygons.length === 0)
+		return;
+
+	let copiedPolygonCount = copiedPolygons.length;
+	let offset = subtract(getClickPosition(event), copiedPolygons[0]);
+
+	for (let i = 1; i < copiedPolygonCount; i++) {
+		let copied = structuredClone(copiedPolygons[i]);
+		polygons.push(copied);
+		translatePolygon(copied, null, offset, false);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
 }
 
 window.onload = function init() {
@@ -432,9 +466,7 @@ window.onload = function init() {
 	canvas.addEventListener("click", function (event) {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
-				// TODO: Pass the object to be deleted here (implement here after the object selection method)
-				var vertex = vec2(2*event.clientX/canvas.width-1, 
-					2*(canvas.height-event.clientY)/canvas.height-1);
+				var vertex = getClickPosition(event);
 				selected = [];
 				addSelected(selected, vertex);
 				console.log("selected objects:", selected);
@@ -447,6 +479,9 @@ window.onload = function init() {
 				// TODO: Pass the object to be rotated here (implement here after the object selection method)
 				let objectToRotated = polygons[0];
 				rotatePolygon(objectToRotated, Math.PI / 4);
+				break;
+			case PASTE:
+				pasteSelection(event);
 				break;
 			default:
 				break;
@@ -496,8 +531,17 @@ window.onload = function init() {
 				mouseHasMoved = false;
 				break;
 			case MOVE_OBJECT:
-				if (mouseHasMoved)
-					translatePolygon(polygons[0], event);
+				if (mouseHasMoved) {
+					var vertex = clickPosition;
+					selected = [];
+					addSelected(selected, vertex);
+					console.log("selected objects:", selected);
+
+					if(selected.length > 0) {
+						let objectToBeTranslated = selected[selected.length - 1];
+						translatePolygon(objectToBeTranslated, event);
+					}
+				}
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;

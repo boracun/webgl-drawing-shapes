@@ -26,38 +26,6 @@ class Polygon {
     addVertex(vertex) {
         this.vertices.push(vertex);
     }
-
-    // Call after all the vertices are given or after an update
-    calculateEnclosingRectangle() {
-        let xComponents = [];
-        let yComponents = [];
-
-        for (let i = 0; i < this.vertices.length; i++) {
-            xComponents.push(this.vertices[i][0]);
-            yComponents.push(this.vertices[i][1]);
-        }
-
-        let minX = Math.min(...xComponents);
-        let minY = Math.min(...yComponents);
-        let maxX = Math.max(...xComponents);
-        let maxY = Math.max(...yComponents);
-
-        this.bottomLeft = vec2(minX, minY);
-        this.topRight = vec2(maxX, maxY);
-    }
-
-    // Returns true if this polygon is fully inside or on the given rectangular area, returns false otherwise
-    isInsideArea(areaBottomLeft, areaTopRight) {
-        if (areaBottomLeft[0] > this.bottomLeft[0])
-            return false;
-        if (areaBottomLeft[1] > this.bottomLeft[1])
-            return false;
-        if (areaTopRight[0] < this.topRight[0])
-            return false;
-        if (areaTopRight[1] < this.topRight[1])
-            return false;
-        return true;
-    }
 }
 
 class Rectangle extends Polygon {
@@ -67,7 +35,7 @@ class Rectangle extends Polygon {
         this.vertices.push(vec2(begin[0], end[1]));
         this.vertices.push(end);
         this.vertices.push(vec2(end[0], begin[1]));
-        this.calculateEnclosingRectangle();
+        calculateEnclosingRectangle(this);
     }
 }
 
@@ -87,8 +55,40 @@ class Triangle extends Polygon {
         this.vertices.push(vec2(topX, topY));
         this.vertices.push(vec2(begin[0], end[1]));
         this.vertices.push(end);
-        this.calculateEnclosingRectangle();
+        calculateEnclosingRectangle(this);
     }
+}
+
+// Call after all the vertices are given or after an update
+function calculateEnclosingRectangle(polygon) {
+    let xComponents = [];
+    let yComponents = [];
+
+    for (let i = 0; i < polygon.vertices.length; i++) {
+        xComponents.push(polygon.vertices[i][0]);
+        yComponents.push(polygon.vertices[i][1]);
+    }
+
+    let minX = Math.min(...xComponents);
+    let minY = Math.min(...yComponents);
+    let maxX = Math.max(...xComponents);
+    let maxY = Math.max(...yComponents);
+
+    polygon.bottomLeft = vec2(minX, minY);
+    polygon.topRight = vec2(maxX, maxY);
+}
+
+// Returns true if this polygon is fully inside or on the given rectangular area, returns false otherwise
+function isInsideArea(polygon, areaBottomLeft, areaTopRight) {
+    if (areaBottomLeft[0] > polygon.bottomLeft[0])
+        return false;
+    if (areaBottomLeft[1] > polygon.bottomLeft[1])
+        return false;
+    if (areaTopRight[0] < polygon.topRight[0])
+        return false;
+    if (areaTopRight[1] < polygon.topRight[1])
+        return false;
+    return true;
 }
 
 const DRAW_RECTANGLE = 0;
