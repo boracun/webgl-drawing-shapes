@@ -45,6 +45,19 @@ class Polygon {
         this.bottomLeft = vec2(minX, minY);
         this.topRight = vec2(maxX, maxY);
     }
+
+    // Returns true if this polygon is fully inside or on the given rectangular area, returns false otherwise
+    isInsideArea(areaBottomLeft, areaTopRight) {
+        if (areaBottomLeft[0] > this.bottomLeft[0])
+            return false;
+        if (areaBottomLeft[1] > this.bottomLeft[1])
+            return false;
+        if (areaTopRight[0] < this.topRight[0])
+            return false;
+        if (areaTopRight[1] < this.topRight[1])
+            return false;
+        return true;
+    }
 }
 
 class Rectangle extends Polygon {
@@ -89,6 +102,8 @@ const REDO = 7;
 const ZOOM = 8;
 const SAVE_SCENE = 9;
 const LOAD_SCENE = 10;
+const COPY = 11;
+const PASTE = 12;
 
 // 8 predefined colors
 var colors = [

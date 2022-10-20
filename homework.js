@@ -33,6 +33,8 @@ var scaleAmount = vec3(1, 1, 0);
 
 var translationAmount = vec3(0, 0, 0);
 
+var copiedPolygons;
+
 function getClickPosition(event, offset = vec2(0, 0)) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
@@ -346,6 +348,18 @@ function translateSpace(event) {
 	render();
 }
 
+function copyArea(event) {
+	copiedPolygons = [];
+	let click2 = getClickPosition(event);
+	let bottomLeft = vec2(Math.min(clickPosition[0], click2[0]), Math.min(clickPosition[1], click2[1]));
+	let topRight = vec2(Math.max(clickPosition[0], click2[0]), Math.max(clickPosition[1], click2[1]));
+
+	for (let i = 0; i < polygons.length; i++) {
+		if (polygons[i].isInsideArea(bottomLeft, topRight))
+			copiedPolygons.push(polygons[i]);
+	}
+}
+
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     
@@ -440,6 +454,7 @@ window.onload = function init() {
 			case DRAW_TRIANGLE:		// Triangle draw mode
 			case MOVE_OBJECT:		// Start of object movement
 			case ZOOM:				// Start of move-around
+			case COPY:				// Start of selection area
 				clickPosition = getClickPosition(event);
 				break;
 			// If an object is wanted to be created
@@ -483,6 +498,13 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
+			case COPY:
+				if (mouseHasMoved)
+					copyArea(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				console.log(copiedPolygons);
+				break;
 			default:
 				break;
 		}
@@ -496,6 +518,7 @@ window.onload = function init() {
 			case DRAW_TRIANGLE:
 			case MOVE_OBJECT:
 			case ZOOM:
+			case COPY:
 				mouseHasMoved = (clickPosition !== null);
 				break;
 			default:
