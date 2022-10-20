@@ -9,28 +9,13 @@ var index = 0;
 var controlIndex = 0;
 var colorIndex = 0;
 
-var t;
-var c;
-var numPolygons = 0;
-var numIndices = [];
-numIndices[0] = 0;
-var start = [0];
+var polygons = [];
 
 var polygonStart = false;
+var clickPosition = null;
+var mouseHasMoved = false;
+var zoomPosition = vec2(0, 0);
 
-<<<<<<< Updated upstream
-var DRAW_RECTANGLE = 0;
-var DRAW_TRIANGLE = 1;
-var CREATE_POLYGON = 2;
-var MOVE_OBJECT = 3;
-var REMOVE_OBJECT = 4;
-var ROTATE_OBJECT = 5;
-var UNDO = 6;
-var REDO = 7;
-var ZOOM = 8;
-var SAVE_SCENE = 9;
-var LOAD_SCENE = 10;
-=======
 var vertexArray = [];
 var colorArray = [];
 
@@ -245,32 +230,175 @@ function remove(polygon) {
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
 }
->>>>>>> Stashed changes
 
-var color = new Uint8Array(4);
+function calculateGeometricCenter(polygon) {
+	let vectorSum = vec2(0, 0);
+	let vertexCount = polygon.vertices.length;
 
-var vertexArray = [];
-var colorArray = [];
+	for (let i = 0; i < vertexCount; i++) {
+		vectorSum = add(vectorSum, polygon.vertices[i]);
+	}
 
-//varying vec4 color;
+	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
+}
 
-// 8 predefined colors
-var colors = [
-	vec4( 0.0, 0.0, 0.0, 1.0 ), // black
-	vec4( 1.0, 0.0, 0.0, 1.0 ), // red
-	vec4( 1.0, 1.0, 0.0, 1.0 ), // yellow
-	vec4( 0.0, 1.0, 0.0, 1.0 ), // green
-	vec4( 0.0, 1.0, 1.0, 1.0 ), // cyan
-	vec4( 0.0, 0.0, 1.0, 1.0 ), // blue
-	vec4( 1.0, 0.0, 1.0, 1.0 ), // magenta
-	vec4( 1.0, 1.0, 1.0, 1.0 ) // white
-];
+// Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
+function rotatePolygon(polygon, rotationAmount) {
+	let center = calculateGeometricCenter(polygon);
+
+	for (let i = 0; i < polygon.vertices.length; i++) {
+		let xComponent = polygon.vertices[i][0];
+		let yComponent = polygon.vertices[i][1];
+
+		xComponent -= center[0];	// Bring the center to the origin
+		yComponent -= center[1];
+
+		console.log(xComponent, yComponent);
+
+		xComponent = -Math.sin(rotationAmount) * yComponent + Math.cos(rotationAmount) * xComponent;	// Rotations around origin
+		yComponent = Math.sin(rotationAmount) * xComponent + Math.cos(rotationAmount) * yComponent;
+
+		console.log(xComponent, yComponent);
+
+		xComponent += center[0];	// Take the center back
+		yComponent += center[1];
+
+		polygon.vertices[i] = vec2(xComponent, yComponent);
+	}
+
+	calculateEnclosingRectangle(polygon);
+
+	polygons.splice(polygons.indexOf(polygon), 1);	// Remove this polygon from polygons
+	polygons.push(polygon);	// Add it to the end
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
+
+function addNewState() {
+	let currentState = new SceneState(index, vertexArray, colorArray, polygons);
+	let currentStateData = JSON.stringify(currentState, null, 2);
+
+	if (stateIndex == null) {
+		stateHistory = [currentStateData];
+		stateIndex = 0;
+		return;
+	}
+
+	// Remove the latest states until the current state
+	let stateHistoryLength = stateHistory.length;
+	for (let i = 0; i < stateHistoryLength - 1 - stateIndex; i++) {
+		stateHistory.pop();
+	}
+
+	// Remove the oldest state if there are 6 states
+	if (stateHistory.length === 6) {
+		stateHistory.shift();
+	}
+
+	// Add the current state
+	stateHistory.push(currentStateData);
+	stateIndex = stateHistory.length - 1;
+}
+
+function loadState(stateJson, refillBuffers = false) {
+	// Get the current state from the history array and update the program values with current state values
+	let currentState = JSON.parse(stateJson);
+
+	index = currentState.index;
+	vertexArray = currentState.vertexArray;
+	colorArray = currentState.colorArray;
+	polygons = currentState.polygons;
+
+	// Need to clear the buffers and refill them with the new polygons array
+	if (refillBuffers) {
+		index = 0;
+		for (let i = 0; i < polygons.length; i++) {
+			addColorToBuffer(polygons[i].color, polygons[i].vertices.length);
+			addVertexToBuffer(polygons[i].vertices);
+			index += polygons[i].vertices.length;
+		}
+	}
+
+	render();
+}
+
+function undo() {
+	if(stateIndex === 0)
+		return;
+
+	stateIndex--;
+	loadState(stateHistory[stateIndex], true);
+}
+
+function redo() {
+	if(stateIndex === 5 || stateIndex >= stateHistory.length - 1)
+		return;
+
+	stateIndex++;
+	loadState(stateHistory[stateIndex], true);
+}
+
+function downloadScene() {
+	let jsonString = 'data:text/json;charset=utf-8,' + encodeURIComponent(stateHistory[stateIndex]);
+	let linkElement = document.getElementById('download-link');
+
+	linkElement.setAttribute("href", jsonString);
+	linkElement.setAttribute("download", "scene_" + new Date().toLocaleString() + ".json");
+	linkElement.click();
+}
+
+function uploadScene() {
+	// Scene is loaded with uploadedJson
+	stateHistory = [uploadedJson];
+	stateIndex = 0;
+	loadState(uploadedJson, true);
+}
+
+function translateSpace(event) {
+	let position2 = getClickPosition(event);
+	let positionDiff = subtract(position2, clickPosition);
+
+	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
+	render();
+}
+
+function copyArea(event) {
+	copiedPolygons = [];
+	copiedPolygons.push(clickPosition);
+
+	let click2 = getClickPosition(event);
+	let bottomLeft = vec2(Math.min(clickPosition[0], click2[0]), Math.min(clickPosition[1], click2[1]));
+	let topRight = vec2(Math.max(clickPosition[0], click2[0]), Math.max(clickPosition[1], click2[1]));
+
+	for (let i = 0; i < polygons.length; i++) {
+		if (isInsideArea(polygons[i], bottomLeft, topRight))
+			copiedPolygons.push(polygons[i]);
+	}
+}
+
+function pasteSelection(event) {
+	if (copiedPolygons.length === 0)
+		return;
+
+	let copiedPolygonCount = copiedPolygons.length;
+	let offset = subtract(getClickPosition(event), copiedPolygons[0]);
+
+	for (let i = 1; i < copiedPolygonCount; i++) {
+		let copied = structuredClone(copiedPolygons[i]);
+		polygons.push(copied);
+		translatePolygon(copied, null, offset, false);
+	}
+
+	addNewState();
+	loadState(stateHistory[stateIndex], true);
+}
 
 window.onload = function init() {
-    canvas = document.getElementById( "gl-canvas" );
+    canvas = document.getElementById("gl-canvas");
     
-    gl = WebGLUtils.setupWebGL( canvas );
-    if ( !gl ) { alert( "WebGL isn't available" ); }
+    gl = WebGLUtils.setupWebGL(canvas);
+    if (!gl) { alert("WebGL isn't available"); }
     
 	// Control and color menus
 	var controlMenu = document.getElementById("Controls");
@@ -278,203 +406,240 @@ window.onload = function init() {
     
     // Obtain the selections from the menus
 	controlMenu.addEventListener("click", function() {
-    controlIndex = controlMenu.selectedIndex;
-	   
+    	controlIndex = controlMenu.selectedIndex;
+
 	   // The drawing process of a polygon was not done but another option is chosen
-		if (controlIndex != CREATE_POLYGON && polygonStart) {
-			// Remove the last elements from the polygon array if any other option is chosen
-			// Decrease the index so that the last vertices do not count, only if 2 vertices are specified
-			if ( numIndices[numPolygons-1] < 3 )
-			{
-				index -= numIndices[numPolygons-1];
-						
-				// Assign the count of vertices of the last polygon to 0
-				numIndices[numPolygons-1] = 0;
-						
-				// Decrease the number of polygons
-				numPolygons--;
-			}
-			
-			// If the given vertices specifies a polygon, only end the drawing process of that polygon
-			else
-			{
-				numIndices[numPolygons] = 0;
-				start[numPolygons] = index;
-			}
-			
-			polygonStart = false;
-			render();
+		if (controlIndex != CREATE_POLYGON) {
+			completePolygon();
 		}
-	
-        });
+
+		switch (controlIndex) {
+			case UNDO:
+				undo();
+				break;
+			case REDO:
+				redo();
+				break;
+			case SAVE_SCENE:
+				downloadScene();
+				break;
+			case LOAD_SCENE:
+				uploadScene();
+				break;
+			default:
+				break;
+		}
+	});
 	
 	colorMenu.addEventListener("click", function() {
        colorIndex = colorMenu.selectedIndex;
-        });
-    
-    
-	var a = document.getElementById("Button1")
-    a.addEventListener("click", function(){
+	});
+
+	var endPolygonButton = document.getElementById("end-polygon-button")
+    endPolygonButton.addEventListener("click", function(){
 		// If the button is clicked, then end the polygon drawing process
-		if (polygonStart) {
-			if ( numIndices[numPolygons-1] < 3 )
-			{
-				index -= numIndices[numPolygons-1];
-						
-				// Assign the count of vertices of the last polygon to 0
-				numIndices[numPolygons-1] = 0;
-						
-				// Decrease the number of polygons
-				numPolygons--;
-			}
-			else {
-				numIndices[numPolygons] = 0;
-				start[numPolygons] = index;
-			}
-			
-			polygonStart = false;
-			render();
+		completePolygon();
+    });
+
+	// The element used for uploading the json files
+	const fileInputElement = document.getElementById("file-input");
+	fileInputElement.addEventListener("change", function () {
+		let reader = new FileReader();
+
+		// When a new json is uploaded, the uploadedJson variable is updated
+		reader.onload = function () {
+			uploadedJson = reader.result;
+		};
+
+		reader.readAsText(this.files[0]);
+	});
+
+	// Mouse left click
+	canvas.addEventListener("click", function (event) {
+		switch (controlIndex) {
+			case REMOVE_OBJECT:
+				var vertex = getClickPosition(event);
+				selected = [];
+				addSelected(selected, vertex);
+				console.log("selected objects:", selected);
+				
+				let objectToBeDeleted = selected[selected.length - 1];
+				console.log("top object in selected:", selected[selected.length - 1]);
+				remove(objectToBeDeleted);
+				break;
+			case ROTATE_OBJECT:
+				// TODO: Pass the object to be rotated here (implement here after the object selection method)
+				let objectToRotated = polygons[0];
+				rotatePolygon(objectToRotated, Math.PI / 4);
+				break;
+			case PASTE:
+				pasteSelection(event);
+				break;
+			default:
+				break;
+		}
+	});
+
+	// Mouse right click
+	canvas.addEventListener("contextmenu", function (event) {
+		event.preventDefault();	// Disable right click menu
+		switch (controlIndex) {
+			default:
+				break;
+		}
+	});
+
+	// Mousedown
+    canvas.addEventListener("mousedown", function(event) {
+		switch (controlIndex) {
+			case DRAW_RECTANGLE:	// Rectangle draw mode
+			case DRAW_TRIANGLE:		// Triangle draw mode
+			case MOVE_OBJECT:		// Start of object movement
+			case ZOOM:				// Start of move-around
+			case COPY:				// Start of selection area
+				clickPosition = getClickPosition(event);
+				break;
+			// If an object is wanted to be created
+			case CREATE_POLYGON:
+				addPolygonVertex(event);
+				break;
 		}
     });
 
-	
-			
-    canvas.addEventListener("mousedown", function(event){
-	
-		// If an object is wanted to be selected
-		if ( controlIndex == REMOVE_OBJECT | controlIndex == ROTATE_OBJECT)
-		{
-			
+	// Mouseup
+	canvas.addEventListener("mouseup", function(event) {
+		switch (controlIndex) {
+			// Rectangle draw mode
+			case DRAW_RECTANGLE:
+				if (mouseHasMoved)
+					createRectangle(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
+			case DRAW_TRIANGLE:
+				if (mouseHasMoved)
+					createTriangle(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
+			case MOVE_OBJECT:
+				if (mouseHasMoved) {
+					var vertex = clickPosition;
+					selected = [];
+					addSelected(selected, vertex);
+					console.log("selected objects:", selected);
+
+					if(selected.length > 0) {
+						let objectToBeTranslated = selected[selected.length - 1];
+						translatePolygon(objectToBeTranslated, event);
+					}
+				}
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
+			case ZOOM:
+				if (mouseHasMoved)
+					translateSpace(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				break;
+			case COPY:
+				if (mouseHasMoved)
+					copyArea(event);
+				clickPosition = null;
+				mouseHasMoved = false;
+				console.log(copiedPolygons);
+				break;
+			default:
+				break;
 		}
+	});
 
-		// If an object is wanted to be created
-		else if ( controlIndex == CREATE_POLYGON) {
-			// If only the first vertex of the polygon/shape is determined
-			if (!polygonStart)
-			{
-				numPolygons++;
-				polygonStart = true;
-				
-				// Obtain the color of the index
-				c = vec4(colors[colorIndex]);
-				
-				// Create a color for the color array
-				var certainty = 0.1;
-				var colorCount = (1 + certainty);
-				var red = (numPolygons - 1) * certainty;
-				var green = Math.floor( red / colorCount ) * certainty;
-				var blue = Math.floor( green / colorCount ) * certainty;
-				
-				t = vec4( red % colorCount, green % colorCount, blue % colorCount, 1.0 );
-				
-				// Add the unique color to the color array
-				colorArray[numPolygons - 1] = t;
-			}
-			
-			// Bind the color buffer to send color data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
-			
-			// Obtain the vertex
-			t  = vec2(2*event.clientX/canvas.width-1, 
-			   2*(canvas.height-event.clientY)/canvas.height-1);
-			  
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
-			
-			console.log(t);
-			/**
-			// Fill the vertex array		
-			vertexArray[index] = t;
-			
-			// Obtain the starting and ending vertices to create a convex polygon
-			var startIndex = index - numIndices[numPolygons-1];
-			var endIndex = index;
-
-			var vertexCount = numIndices[numPolygons-1] + 1;
-			var convexVertices = createConvexPolygon(vertexArray[startIndex, endIndex], vertexCount);
-			
-			// Bind the vertex buffer to send vertex data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			
-			console.log(vertexArray[0][0]);
-			console.log(vertexArray[0][1]);
-			
-			for ( var count = 0; count < vertexCount; count++ )
-			{
-				var inorderVertex = vec2(convexVertices[count][0], convexVertices[count][1]);
-				console.log(inorderVertex);
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count), flatten(inorderVertex));
-			}
-			*/
-			
-			// Increasing the count of vertices corresponding to the current polygon
-			numIndices[numPolygons-1]++;
-			index++;
-			
-			render();
-			
-		}
-			
-    } );
-
-	/*
 	// Used only for moving an object
 	canvas.addEventListener("mousemove", function(event){
-		if ( controlIndex == MOVE_OBJECT )
-		{}
-      }
+		switch (controlIndex) {
+			// Detect drag
+			case DRAW_RECTANGLE:
+			case DRAW_TRIANGLE:
+			case MOVE_OBJECT:
+			case ZOOM:
+			case COPY:
+				mouseHasMoved = (clickPosition !== null);
+				break;
+			default:
+				break;
+		}
+	});
 
-    } );
-	*/
+	document.addEventListener('keydown', function(event) {
+		if (event.keyCode === 37) {
+			scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+		else if (event.keyCode === 39) {
+			scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+			// zoomPosition = getClickPosition(event);
+			render();
+		}
+	}, true);
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
-    // Determine the clear color (ligth grey)
-	gl.clearColor( 0.9, 0.9, 0.9, 1.0 );
+    // Determine the clear color (light grey)
+	gl.clearColor(0.9, 0.9, 0.9, 1.0);
 	
     // Clear the canvas (with grey)
-	gl.clear( gl.COLOR_BUFFER_BIT );
+	gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Load shaders and initialize attribute buffers
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
+    var program = initShaders(gl, "vertex-shader", "fragment-shader");
+    gl.useProgram(program);
     
 	// Creating the vertex buffer and binding it
-    var vertexBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, 8*maxNumVertices, gl.STATIC_DRAW );
+    vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 8 * maxNumVertices, gl.STATIC_DRAW);
 	
-	
-    var vPos = gl.getAttribLocation( program, "vPosition" );
-    gl.vertexAttribPointer( vPos, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vPos );
+    var vPos = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPos);
     
 	// Creating the color buffer and binding it
-    var colorBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, 16*maxNumVertices, gl.STATIC_DRAW );
+    colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 16 * maxNumVertices, gl.STATIC_DRAW);
 	
-    var vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vColor );
-	
+    var vColor = gl.getAttribLocation(program, "vColor");
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
+
+	transformationMatrixLocation = gl.getUniformLocation(program, "transformationMatrix");
+
+	addNewState();
 }
 
 function render() {
     // Clear the canvas (with grey) to redraw everything
-    gl.clear( gl.COLOR_BUFFER_BIT );
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
+	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+	let scaleMatrix = scale(scaleAmount);
+	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
+	let transformationMatrix = mult(translationMatrix, scaleMatrix);
+	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
+
+	// console.log(zoomPosition);
 
 	// Drawing each polygon
-    for(var i=0; i<numPolygons; i++) {
-        gl.drawArrays( gl.LINE_LOOP, start[i], numIndices[i] );
+	let startIndex = 0;
+    for(var i = 0; i < polygons.length; i++) {
+        gl.drawArrays(gl.TRIANGLE_FAN, startIndex, polygons[i].vertices.length);
+		startIndex += polygons[i].vertices.length;
     }
 }
-<<<<<<< Updated upstream
-/*
-function createConvexPolygon(vertices, length)
-=======
 
 function createConvexPolygon(vertices)
 {
@@ -616,11 +781,61 @@ function intersects(a,b,c,d,p,q,r,s)
 }
 
 function isInsidePolygon(polyVertices, vertex)
->>>>>>> Stashed changes
 {
-	//for (var i = 0; i < length; i++)
-		//console.log(vertices[i]);
+	var sumReal = 0;
+	var sumImag = 0;
+	var sum = 0;
+	console.log(vertex);
+	for (var i = 1; i < polyVertices.length + 1; i++)
+	{
+		var v0 = polyVertices[i - 1];
+		var v1 = polyVertices[i % polyVertices.length];
+
+		
+		var firstReal = v1[0] - vertex[0];
+		var firstImag = v1[1] - vertex[1];
+		var firstLength = Math.sqrt(Math.pow(firstReal, 2) + Math.pow(firstImag, 2));
+		
+		var secondReal = v0[0] - vertex[0];
+		var secondImag = v0[1] - vertex[1];
+		var secondLength = Math.sqrt(Math.pow(secondReal, 2) + Math.pow(secondImag, 2));
+		
+		var firstAngle;
+		var secondAngle;
+		
+		if (firstImag < 0)
+			firstAngle = -Math.acos( firstReal / firstLength);
+		else
+			firstAngle = Math.acos( firstReal / firstLength);
+		
+		if (secondImag < 0)
+			secondAngle = -Math.acos( secondReal / secondLength);
+		else
+			secondAngle = Math.acos( secondReal / secondLength);
+		
+		var angleDif = firstAngle - secondAngle;
+		
+		if (angleDif < (-branchAngle))
+			angleDif += 2 * Math.PI;
+		else if (angleDif > branchAngle)
+			angleDif -= 2 * Math.PI;
+		
+		sumReal += Math.log(firstLength) - Math.log(secondLength);
+		sumImag += angleDif;
+		
+	}
 	
-	return vertices;
+	sum = Math.sqrt(Math.pow(sumReal, 2) + Math.pow(sumImag, 2));
+	return sum > 1;
 }
-*/
+
+function addSelected(selected, vertex)
+{
+	for (var polygonIndex = 0; polygonIndex < polygons.length; polygonIndex++)
+	{
+		var check = isInsidePolygon(polygons[polygonIndex].vertices, vertex);
+		
+		if (check)
+			selected.push(polygons[polygonIndex]);
+	}	
+}
