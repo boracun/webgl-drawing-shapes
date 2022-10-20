@@ -216,8 +216,10 @@ function translatePolygon(polygon, event) {
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
 function remove(polygon) {
 	let elementIndex = polygons.indexOf(polygon);
-
+	
 	// Remove that element
+	if ( elementIndex == -1 )
+		return;
 	polygons.splice(elementIndex, 1);
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -431,7 +433,14 @@ window.onload = function init() {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
 				// TODO: Pass the object to be deleted here (implement here after the object selection method)
-				let objectToBeDeleted = polygons[0];
+				var vertex = vec2(2*event.clientX/canvas.width-1, 
+					2*(canvas.height-event.clientY)/canvas.height-1);
+				selected = [];
+				addSelected(selected, vertex);
+				console.log("selected objects:", selected);
+				
+				let objectToBeDeleted = selected[selected.length - 1];
+				console.log("top object in selected:", selected[selected.length - 1]);
 				remove(objectToBeDeleted);
 				break;
 			case ROTATE_OBJECT:
@@ -469,11 +478,6 @@ window.onload = function init() {
 				break;
 			// If an object is wanted to be selected
 			case REMOVE_OBJECT:
-				var vertex = vec2(2*event.clientX/canvas.width-1, 
-					2*(canvas.height-event.clientY)/canvas.height-1);
-				selected = [];
-				addSelected(selected, vertex);
-				console.log(selected);
 			case ROTATE_OBJECT:
 				break;
 			default:
