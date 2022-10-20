@@ -1,22 +1,26 @@
 <html>
+<head>
+	<title>CS 465 Assignment 1</title>
+	<link rel="stylesheet" href="style.css">
 
-<!-- Vertex shader script --> 
-<script id="vertex-shader" type="x-shader/x-vertex">
+	<!-- Vertex shader script -->
+	<script id="vertex-shader" type="x-shader/x-vertex">
 	attribute vec4 vPosition;
 	attribute vec4 vColor;
 
 	varying vec4 fColor;
 
+	uniform mat4 transformationMatrix;
+
 	void main()
 	{
-		gl_Position = vPosition;
+		gl_Position = transformationMatrix * vPosition;
 		fColor = vColor;
 	}
-</script>
+	</script>
 
-<!-- Fragment shader script --> 
-<script id="fragment-shader" type="x-shader/x-fragment">
-
+	<!-- Fragment shader script -->
+	<script id="fragment-shader" type="x-shader/x-fragment">
 	precision mediump float;
 
 	varying vec4 fColor;
@@ -24,47 +28,54 @@
 	{
 		gl_FragColor = fColor;
 	}
-</script>
+	</script>
 
-<!-- Including other scripts --> 
-<script type="text/javascript" src="Common/webgl-utils.js"></script>
-<script type="text/javascript" src="Common/initShaders.js"></script>
-<script type="text/javascript" src="Common/MV.js"></script>
-<script type="text/javascript" src="utils.js"></script>
-<script type="text/javascript" src="homework.js"></script>
+	<!-- Including other scripts -->
+	<script type="text/javascript" src="Common/webgl-utils.js"></script>
+	<script type="text/javascript" src="Common/initShaders.js"></script>
+	<script type="text/javascript" src="Common/MV.js"></script>
+	<script type="text/javascript" src="utils.js"></script>
+	<script type="text/javascript" src="homework.js"></script>
+</head>
+<body>
+	<canvas id="gl-canvas" width="512" height="512">
+		Sorry, your web browser does not support HTML5's canvas element.
+	</canvas>
 
-<body style = "margin:0px">
+	<!-- Control menu -->
+	<select id="Controls" size="13">
+		<option value="0">Draw Rectangle</option>
+		<option value="1">Draw Triangle</option>
+		<option value="2">Create Polygon</option>
+		<option value="3">Move Object</option>
+		<option value="4">Remove Object</option>
+		<option value="5">Rotate Object</option>
+		<option value="6">Undo</option>
+		<option value="7">Redo</option>
+		<option value="8">Zoom in/out</option>
+		<option value="9">Save Scene</option>
+		<option value="10">Load Scene</option>
+		<option value="11">Copy Selection</option>
+		<option value="12">Paste Selection</option>
+	</select>
 
-<canvas id="gl-canvas" width="1024" height="512">
-	Sorry, your web browser does not support HTML5's canvas element.
-</canvas>
+	<!-- Color menu -->
+	<select id="Colors" size="8">
+		<option id="black-option" value="0"></option>
+		<option id="red-option" value="1"></option>
+		<option id="yellow-option" value="2"></option>
+		<option id="green-option" value="3"></option>
+		<option id="cyan-option" value="4"></option>
+		<option id="blue-option" value="5"></option>
+		<option id="magenta-option" value="6"></option>
+		<option id="white-option" value="7"></option>
+	</select>
+	<button id = "end-polygon-button">End Polygon</button>
 
-<!-- Control menu --> 
-<select id="Controls" size="11">
-    <option value="0">Draw Rectangle</option>
-    <option value="1">Draw Triangle</option>
-	<option value="2">Create Polygon</option>
-    <option value="3">Move Object</option>
-	<option value="4">Remove Object</option>
-	<option value="5">Rotate Object</option>
-	<option value="6">Undo</option>
-	<option value="7">Redo</option>
-	<option value="8">Zoom in/out</option>
-	<option value="9">Save Scene</option>
-	<option value="10">Load Scene</option>
-</select>
+	<a id="download-link">
+		<button id="download-button">Download Scene</button>
+	</a>
 
-<!-- Color mennu --> 
-<select id="Colors" size="8">
-    <option value="0">Black</option>
-    <option value="1">Red</option>
-    <option value="2">Yellow</option>
-	<option value="3">Green</option>
-    <option value="4">Cyan</option>
-    <option value="5">Blue</option>
-	<option value="6">Magenta</option>
-    <option value="7">White</option>
-</select>
-<button id = "Button1">End Polygon</button>
+	<input id="file-input" type="file" />
 </body>
 </html>

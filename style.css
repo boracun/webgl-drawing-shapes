@@ -1,0 +1,81 @@
+body {
+    margin: 0px;
+    user-select: none;
+}
+
+#Colors {
+    width: 20px;
+    overflow: hidden;
+}
+
+#black-option {
+    background-color: black;
+    height: 20px;
+}
+
+#black-option:checked {
+    background: linear-gradient(rgba(75, 75, 75, 255), rgba(75, 75, 75, 255));
+}
+
+#red-option {
+    background-color: red;
+    height: 20px;
+}
+
+#red-option:checked {
+    background: linear-gradient(darkred, darkred);
+}
+
+#yellow-option {
+    background-color: yellow;
+    height: 20px;
+}
+
+#yellow-option:checked {
+    background: linear-gradient(orange, orange);
+}
+
+#green-option {
+    background-color: green;
+    height: 20px;
+}
+
+#green-option:checked {
+    background: linear-gradient(darkgreen, darkgreen);
+}
+
+#cyan-option {
+    background-color: cyan;
+    height: 20px;
+}
+
+#cyan-option:checked {
+    background: linear-gradient(darkcyan, darkcyan);
+}
+
+#blue-option {
+    background-color: blue;
+    height: 20px;
+}
+
+#blue-option:checked {
+    background: linear-gradient(darkblue, darkblue);
+}
+
+#magenta-option {
+    background-color: magenta;
+    height: 20px;
+}
+
+#magenta-option:checked {
+    background: linear-gradient(purple, purple);
+}
+
+#white-option {
+    background-color: white;
+    height: 20px;
+}
+
+#white-option:checked {
+    background: linear-gradient(lightgrey, lightgrey);
+}
