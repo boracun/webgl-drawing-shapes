@@ -117,7 +117,7 @@ function completePolygon() {
 			polygons.pop();
 		}
 		else {
-			polygons[polygons.length - 1].calculateEnclosingRectangle();
+			calculateEnclosingRectangle(polygons[polygons.length - 1]);
 			addNewState();
 		}
 
@@ -207,7 +207,7 @@ function translatePolygon(polygon, event) {
 		polygon.vertices[i] = add(polygon.vertices[i], positionDiff);
 	}
 
-	polygon.calculateEnclosingRectangle();
+	calculateEnclosingRectangle(polygon);
 
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -260,7 +260,7 @@ function rotatePolygon(polygon, rotationAmount) {
 		polygon.vertices[i] = vec2(xComponent, yComponent);
 	}
 
-	polygon.calculateEnclosingRectangle();
+	calculateEnclosingRectangle(polygon);
 
 	addNewState();
 	loadState(stateHistory[stateIndex], true);
@@ -357,13 +357,13 @@ function translateSpace(event) {
 function copyArea(event) {
 	copiedPolygons = [];
 	copiedPolygons.push(clickPosition);
-	
+
 	let click2 = getClickPosition(event);
 	let bottomLeft = vec2(Math.min(clickPosition[0], click2[0]), Math.min(clickPosition[1], click2[1]));
 	let topRight = vec2(Math.max(clickPosition[0], click2[0]), Math.max(clickPosition[1], click2[1]));
 
 	for (let i = 0; i < polygons.length; i++) {
-		if (polygons[i].isInsideArea(bottomLeft, topRight))
+		if (isInsideArea(polygons[i], bottomLeft, topRight))
 			copiedPolygons.push(polygons[i]);
 	}
 }
