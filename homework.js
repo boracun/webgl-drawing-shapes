@@ -33,6 +33,7 @@ var scaleAmount = vec3(1, 1, 0);
 
 var translationAmount = vec3(0, 0, 0);
 
+// Careful: This array's first element is always the position where the area selection started
 var copiedPolygons;
 
 function getClickPosition(event, offset = vec2(0, 0)) {
@@ -350,6 +351,8 @@ function translateSpace(event) {
 
 function copyArea(event) {
 	copiedPolygons = [];
+	copiedPolygons.push(clickPosition);
+	
 	let click2 = getClickPosition(event);
 	let bottomLeft = vec2(Math.min(clickPosition[0], click2[0]), Math.min(clickPosition[1], click2[1]));
 	let topRight = vec2(Math.max(clickPosition[0], click2[0]), Math.max(clickPosition[1], click2[1]));
