@@ -15,6 +15,8 @@ class SceneState {
 class Polygon {
     vertices;
     color;
+    bottomLeft; // Bottom left corner coordinates of the smallest enclosing rectangle
+    topRight;   // Top right corner coordinates of the smallest enclosing rectangle
 
     constructor(vertices, color) {
         this.vertices = vertices;
@@ -23,6 +25,25 @@ class Polygon {
 
     addVertex(vertex) {
         this.vertices.push(vertex);
+    }
+
+    // Call after all the vertices are given or after an update
+    calculateEnclosingRectangle() {
+        let xComponents = [];
+        let yComponents = [];
+
+        for (let i = 0; i < this.vertices.length; i++) {
+            xComponents.push(this.vertices[i][0]);
+            yComponents.push(this.vertices[i][1]);
+        }
+
+        let minX = Math.min(...xComponents);
+        let minY = Math.min(...yComponents);
+        let maxX = Math.max(...xComponents);
+        let maxY = Math.max(...yComponents);
+
+        this.bottomLeft = vec2(minX, minY);
+        this.topRight = vec2(maxX, maxY);
     }
 }
 
@@ -33,6 +54,7 @@ class Rectangle extends Polygon {
         this.vertices.push(vec2(begin[0], end[1]));
         this.vertices.push(end);
         this.vertices.push(vec2(end[0], begin[1]));
+        this.calculateEnclosingRectangle();
     }
 }
 
@@ -52,6 +74,7 @@ class Triangle extends Polygon {
         this.vertices.push(vec2(topX, topY));
         this.vertices.push(vec2(begin[0], end[1]));
         this.vertices.push(end);
+        this.calculateEnclosingRectangle();
     }
 }
 

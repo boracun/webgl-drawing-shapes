@@ -110,8 +110,10 @@ function completePolygon() {
 			// Remove the last polygon from polygons
 			polygons.pop();
 		}
-		else
+		else {
+			polygons[polygons.length - 1].calculateEnclosingRectangle();
 			addNewState();
+		}
 
 		polygonStart = false;
 		render();
