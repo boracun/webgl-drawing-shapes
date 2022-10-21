@@ -312,6 +312,9 @@ function loadState(stateJson, refillBuffers = false) {
 	colorArray = currentState.colorArray;
 	polygons = currentState.polygons;
 
+	scaleAmount = vec3(1, 1, 0);
+	translationAmount = vec3(0, 0, 0);
+
 	// Need to clear the buffers and refill them with the new polygons array
 	if (refillBuffers) {
 		index = 0;
