@@ -364,7 +364,7 @@ function translateSpace(event) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
 
-	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
+	translationAmount = add(translationAmount, vec3(positionDiff[0] * scaleAmount[0], positionDiff[1] * scaleAmount[1], 0));
 	render();
 }
 
