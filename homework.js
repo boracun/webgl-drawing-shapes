@@ -46,8 +46,8 @@ function getClickPosition(event, offset = vec2(0, 0)) {
 	xComponent /= scaleAmount[0];
 	yComponent /= scaleAmount[1];
 
-	xComponent -= translationAmount[0];
-	yComponent -= translationAmount[1];
+	xComponent -= translationAmount[0] / scaleAmount[0];
+	yComponent -= translationAmount[1] / scaleAmount[1];
 
 	let result = vec2(xComponent, yComponent);
 	result = add(result, offset);
