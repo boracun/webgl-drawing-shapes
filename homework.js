@@ -357,12 +357,60 @@ function uploadScene() {
 	loadState(uploadedJson, true);
 }
 
-function translateSpace(event) {
+function translateSpace(event, customPositionDiff = null) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
 
+	if (customPositionDiff !== null)
+		positionDiff = customPositionDiff;
+
 	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
 	render();
+}
+
+function zoom(event, zoomIn) {
+	// Bring the zoomPosition to the origin
+	zoomPosition = getClickPosition(event);
+	console.log("zoom position: ", zoomPosition);
+	translationAmount = subtract(translationAmount, vec3(zoomPosition[0] * SCALE_CONSTANT[0], zoomPosition[1] * SCALE_CONSTANT[0], 0));
+	console.log("new translation amount: ", translationAmount);
+	// translationAmount = add(translationAmount, vec3(-zoomPosition[0], -zoomPosition[1], 0));
+
+	// Scale
+	scaleAmount = zoomIn ? add(scaleAmount, SCALE_CONSTANT) : subtract(scaleAmount, SCALE_CONSTANT);
+
+	// Bring the zoomPosition back
+	// translationAmount = add(translationAmount, vec3(zoomPosition[0] / scaleAmount[0], zoomPosition[1] / scaleAmount[1], 0));
+	render();
+}
+
+function getTransformationMatrix() {
+	let transformationMatrix = mat4();
+	let translationMatrix;
+	let scaleMatrix;
+	let inverseTranslationMatrix;
+
+	switch (controlIndex) {
+		// Zoom in/out mode
+		case ZOOM:
+			translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
+			scaleMatrix = scale(scaleAmount);
+			inverseTranslationMatrix = translate(zoomPosition[0], zoomPosition[1], 0);
+
+			transformationMatrix = mult(inverseTranslationMatrix, scaleMatrix);
+			transformationMatrix = mult(transformationMatrix, translationMatrix);
+			break;
+
+		// Other modes
+		default:
+			translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+			scaleMatrix = scale(scaleAmount);
+
+			transformationMatrix = mult(translationMatrix, scaleMatrix);
+			break;
+	}
+
+	return transformationMatrix;
 }
 
 function copyArea(event) {
@@ -460,6 +508,7 @@ window.onload = function init() {
 	canvas.addEventListener("click", function (event) {
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
+				console.log(getClickPosition(event));
 				var vertex = getClickPosition(event);
 				selected = [];
 				addSelected(selected, vertex);
@@ -475,8 +524,7 @@ window.onload = function init() {
 				rotatePolygon(objectToRotated, Math.PI / 4);
 				break;
 			case ZOOM:
-				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
-				render();
+				zoom(event, true);
 				break;
 			case PASTE:
 				pasteSelection(event);
@@ -491,8 +539,7 @@ window.onload = function init() {
 		event.preventDefault();	// Disable right click menu
 		switch (controlIndex) {
 			case ZOOM:
-				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
-				render();
+				zoom(event, false);
 				break;
 			default:
 				break;
@@ -620,15 +667,8 @@ function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
-	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
-	let scaleMatrix = scale(scaleAmount);
-	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
-	let transformationMatrix = mult(translationMatrix, scaleMatrix);
-	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
+	let transformationMatrix = getTransformationMatrix();
 	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
-
-	// console.log(zoomPosition);
 
 	// Drawing each polygon
 	let startIndex = 0;

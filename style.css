@@ -1,6 +1,7 @@
 body {
     margin: 0px;
     user-select: none;
+    background: rgb(50, 50, 50);
 }
 
 #Controls {
