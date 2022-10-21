@@ -474,6 +474,10 @@ window.onload = function init() {
 				let objectToRotated = polygons[0];
 				rotatePolygon(objectToRotated, Math.PI / 4);
 				break;
+			case ZOOM:
+				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
 			case PASTE:
 				pasteSelection(event);
 				break;
@@ -486,6 +490,10 @@ window.onload = function init() {
 	canvas.addEventListener("contextmenu", function (event) {
 		event.preventDefault();	// Disable right click menu
 		switch (controlIndex) {
+			case ZOOM:
+				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
 			default:
 				break;
 		}
@@ -497,7 +505,7 @@ window.onload = function init() {
 			case DRAW_RECTANGLE:	// Rectangle draw mode
 			case DRAW_TRIANGLE:		// Triangle draw mode
 			case MOVE_OBJECT:		// Start of object movement
-			case ZOOM:				// Start of move-around
+			case MOVE_AROUND:				// Start of move-around
 			case COPY:				// Start of selection area
 				clickPosition = getClickPosition(event);
 				break;
@@ -539,7 +547,7 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
-			case ZOOM:
+			case MOVE_AROUND:
 				if (mouseHasMoved)
 					translateSpace(event);
 				clickPosition = null;
@@ -557,14 +565,14 @@ window.onload = function init() {
 		}
 	});
 
-	// Used only for moving an object
+	// Mouse move / drag
 	canvas.addEventListener("mousemove", function(event){
 		switch (controlIndex) {
 			// Detect drag
 			case DRAW_RECTANGLE:
 			case DRAW_TRIANGLE:
 			case MOVE_OBJECT:
-			case ZOOM:
+			case MOVE_AROUND:
 			case COPY:
 				mouseHasMoved = (clickPosition !== null);
 				break;
@@ -572,19 +580,6 @@ window.onload = function init() {
 				break;
 		}
 	});
-
-	document.addEventListener('keydown', function(event) {
-		if (event.keyCode === 37) {
-			scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
-			// zoomPosition = getClickPosition(event);
-			render();
-		}
-		else if (event.keyCode === 39) {
-			scaleAmount = add(scaleAmount, SCALE_CONSTANT);
-			// zoomPosition = getClickPosition(event);
-			render();
-		}
-	}, true);
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	

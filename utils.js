@@ -100,10 +100,11 @@ const ROTATE_OBJECT = 5;
 const UNDO = 6;
 const REDO = 7;
 const ZOOM = 8;
-const SAVE_SCENE = 9;
-const LOAD_SCENE = 10;
-const COPY = 11;
-const PASTE = 12;
+const MOVE_AROUND = 9;
+const SAVE_SCENE = 10;
+const LOAD_SCENE = 11;
+const COPY = 12;
+const PASTE = 13;
 
 // 8 predefined colors
 var colors = [
