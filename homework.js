@@ -634,91 +634,48 @@ function render() {
 
 	// Drawing each polygon
 	let startIndex = 0;
-    for(var i = 0; i < polygons.length; i++) {
-        gl.drawArrays(gl.TRIANGLE_FAN, startIndex, polygons[i].vertices.length);
+    for(let i = 0; i < polygons.length; i++) {
+        gl.drawArrays(gl.TRIANGLE_STRIP, startIndex, polygons[i].vertices.length);
 		startIndex += polygons[i].vertices.length;
     }
 }
 
 function createConvexPolygon(vertices)
 {
-	var convexVertices = [];
-	var length = vertices.length;
+	let convexVertices = [];
+	let length = vertices.length;
 	
 	if (length > 3)
 	{
-		var lastPoint = vertices[length - 1];
+		console.log(vertices);
+		let lastPoint = vertices[length - 1];
 		
 		// Coordinates of the last point
-		var x = lastPoint[0];
-		var y = lastPoint[1];
+		let x = lastPoint[0];
+		let y = lastPoint[1];
 
-		var distances = [];
+		let distances = [];
 		
 		
-		for (var i = 0; i <= length - 3; i++)
+		for (let i = 0; i <= length - 3; i++)
 		{
 			// Two consecutive points
-			var P1 = vertices[i];
-			var P2 = vertices[i+1];
+			let P1 = vertices[i];
+			let P2 = vertices[i+1];
 			
-			// Coordinates of the corresponding points
-			var x1 = P1[0];
-			var y1 = P1[1];
-			var x2 = P2[0];
-			var y2 = P2[1];
+			/////////
+			let minimumDistance = obtainMinimumDistance(P1, P2, x, y);
 			
-			// Line coefficients through P1 and P2
-			var A = y2 - y1;
-			var B = x1 - x2;
-			var C = - A * x1 - B * y1;
-			
-			/*
-			FIRST ALGORITHM: For each line through two consecutive points, find the closest one on that
-			line to the given vertex.
-			*/		
-			
-			// The slope of the line and the normal to that line
-			m1 = -A / B;
-			m2 = -1 / m1;
-			
-			// Coordinates of the closest point
-			var x0 = (m1 * x1 - m2 * x - y1 + y) / (m1 - m2);
-			var y0 = m2 * (x0 - x) + y;
-			
-			/*
-			SECOND ALGORITHM: Check if the closest point is on the line segment through those two
-			consecutive points.
-			*/
-			
-			// The function that gives the line segment is f(a) = a * P1 + (1 - a) * P2.
-			// This function is assigned to P0 and the corresponding system of linear equations
-			// is solved to find the corresponding value of a. If a < 0 or a > 0, then the point
-			// is not on the line segment.
-			
-			var coefficients = mat2(x1, x2, y1, y2);
-			var rightHandSide = vec2(x0, y0);
-			var inverseOfCoefficients = inverse(coefficients);
-			console.log(rightHandSide);
-			console.log(inverseOfCoefficients);
-			console.log(rightHandSide.length, inverseOfCoefficients.length);
-			var solution = mult(inverseOfCoefficients, rightHandSide);
-			
-			var a = solution[0];
-			
-			/*
-			THIRD ALGORITHM: If the point in on that line segment, find the distance between the point
-			and the given vertex. Add the distance to the list, add -1 otherwise.
-			*/
-			
-			if ( a < 0 | a > 1 )
-				distances[i] = -1;
-			else
-			{
-				var distance = Math.abs(A * x + B * y + C) / Math.sqrt(Math.pow(A, 2) + Math.pow(B, 2));
-				distances[i] = distance;
-			}
+			distances[i] = minimumDistance;
 		}
+		
+		// The first and the last points of the polygon
+		let P1 = vertices[length - 2];
+		let P2 = vertices[0];
+		
+		let minimumDistance = obtainMinimumDistance(P1, P2, x, y);
+			
+		distances[length - 2] = minimumDistance;
 
 		/*
 		FOURTH ALGORITM: Find the minimum of the distances and the corresponding points. Add the vertex
@@ -726,12 +683,23 @@ function createConvexPolygon(vertices)
 		*/
 		
 		// Find the minimum distance and the corresponding index of the vertex
-		var minIndex = 0;
-		var minimum = distances[0];
+		let minIndex = 0;
 		
-		for (var i = 0; i < length - 1; i++)
+		// Selected a distance which does not equal to -1
+		for (let i = 0; i < length - 1; i++)
 		{
-			if ( distances[i] < minimum )
+			if ( distances[i] >= 0 )
+			{
+				minIndex = i;
+				minimum = distances[i];
+				break;
+			}
+		}
+		
+		// Find the minimum distance
+		for (let i = 0; i < length - 1; i++)
+		{
+			if ( distances[i] < minimum && distances[i] >=0 )
 			{
 				minIndex = i;
 				minimum = distances[i];
@@ -740,25 +708,26 @@ function createConvexPolygon(vertices)
 		
 		// If the point is where it belongs, do not change its place. Otherwise, change it.
 		if ( minIndex == length - 2 )
-			for ( var currentIndex = 0; currentIndex < length; currentIndex++ )
+			for ( let currentIndex = 0; currentIndex < length; currentIndex++ )
 				convexVertices[currentIndex] = vertices[currentIndex];
 			
 		else
 		{
-			for ( var currentIndex = 0; currentIndex <= minIndex; currentIndex++ )
+			for ( let currentIndex = 0; currentIndex <= minIndex; currentIndex++ )
 				convexVertices[currentIndex] = vertices[currentIndex];
 				
 			convexVertices[minIndex + 1] = lastPoint;
 			
-			for ( var currentIndex = minIndex + 1; currentIndex < length - 1; currentIndex++)
+			for ( let currentIndex = minIndex + 1; currentIndex < length - 1; currentIndex++)
 				convexVertices[currentIndex + 1] = vertices[currentIndex];
 			
 		}
+		console.log(convexVertices);
 	}
 	
 	else
 	{
-		for ( var currentIndex = 0; currentIndex < length; currentIndex++ )
+		for ( let currentIndex = 0; currentIndex < length; currentIndex++ )
 			convexVertices[currentIndex] = vertices[currentIndex];
 	}
 	
@@ -766,43 +735,84 @@ function createConvexPolygon(vertices)
 	return convexVertices;
 }
 
-function intersects(a,b,c,d,p,q,r,s)
+function obtainMinimumDistance(P1, P2, x, y)
 {
-	var det, gamma, lambda;
-    det = (c - a) * (s - q) - (r - p) * (d - b);
-	if (det === 0) {
-		return false;
-	} 
+	// Coordinates of the corresponding points
+	let x1 = P1[0];
+	let y1 = P1[1];
+	let x2 = P2[0];
+	let y2 = P2[1];
+			
+	// Line coefficients through P1 and P2
+	let A = y2 - y1;
+	let B = x1 - x2;
+	let C = - A * x1 - B * y1;
+			
+	/*
+	FIRST ALGORITHM: For each line through two consecutive points, find the closest one on that
+	line to the given vertex.
+	*/		
+			
+	// The slope of the line and the normal to that line
+	m1 = -A / B;
+	m2 = -1 / m1;
+			
+	// Coordinates of the closest point
+	let x0 = (m1 * x1 - m2 * x - y1 + y) / (m1 - m2);
+	let y0 = m2 * (x0 - x) + y;
+			
+	/*
+	SECOND ALGORITHM: Check if the closest point is on the line segment through those two
+	consecutive points.
+	*/
+			
+	// The function that gives the line segment is f(a) = a * P1 + (1 - a) * P2.
+	// This function is assigned to P0 and the corresponding system of linear equations
+	// is solved to find the corresponding value of a. If a < 0 or a > 0, then the point
+	// is not on the line segment.
+			
+	let coefficients = mat2(x1, x2, y1, y2);
+	let rightHandSide = vec2(x0, y0);
+	let inverseOfCoefficients = inverse(coefficients);
+	let solution = findSolution(inverseOfCoefficients, rightHandSide);
+			
+	let a = solution[0];
+	/*
+	THIRD ALGORITHM: If the point in on that line segment, find the distance between the point
+	and the given vertex. Add the distance to the list, add -1 otherwise.
+	*/
+			
+	if ( a < -0.1 || a > 1.1 )
+		return -1;
 	else
 	{
-		lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
-		gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
-		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+		let distance = Math.abs(A * x + B * y + C) / Math.sqrt(Math.pow(A, 2) + Math.pow(B, 2));
+		return distance;
 	}
 }
 
 function isInsidePolygon(polyVertices, vertex)
 {
-	var sumReal = 0;
-	var sumImag = 0;
-	var sum = 0;
+	let sumReal = 0;
+	let sumImag = 0;
+	let sum = 0;
 	console.log(vertex);
-	for (var i = 1; i < polyVertices.length + 1; i++)
+	for (let i = 1; i < polyVertices.length + 1; i++)
 	{
-		var v0 = polyVertices[i - 1];
-		var v1 = polyVertices[i % polyVertices.length];
+		let v0 = polyVertices[i - 1];
+		let v1 = polyVertices[i % polyVertices.length];
 
 		
-		var firstReal = v1[0] - vertex[0];
-		var firstImag = v1[1] - vertex[1];
-		var firstLength = Math.sqrt(Math.pow(firstReal, 2) + Math.pow(firstImag, 2));
+		let firstReal = v1[0] - vertex[0];
+		let firstImag = v1[1] - vertex[1];
+		let firstLength = Math.sqrt(Math.pow(firstReal, 2) + Math.pow(firstImag, 2));
 		
-		var secondReal = v0[0] - vertex[0];
-		var secondImag = v0[1] - vertex[1];
-		var secondLength = Math.sqrt(Math.pow(secondReal, 2) + Math.pow(secondImag, 2));
+		let secondReal = v0[0] - vertex[0];
+		let secondImag = v0[1] - vertex[1];
+		let secondLength = Math.sqrt(Math.pow(secondReal, 2) + Math.pow(secondImag, 2));
 		
-		var firstAngle;
-		var secondAngle;
+		let firstAngle;
+		let secondAngle;
 		
 		if (firstImag < 0)
 			firstAngle = -Math.acos( firstReal / firstLength);
@@ -814,7 +824,7 @@ function isInsidePolygon(polyVertices, vertex)
 		else
 			secondAngle = Math.acos( secondReal / secondLength);
 		
-		var angleDif = firstAngle - secondAngle;
+		let angleDif = firstAngle - secondAngle;
 		
 		if (angleDif < (-branchAngle))
 			angleDif += 2 * Math.PI;
@@ -834,7 +844,7 @@ function addSelected(selected, vertex)
 {
 	for (var polygonIndex = 0; polygonIndex < polygons.length; polygonIndex++)
 	{
-		var check = isInsidePolygon(polygons[polygonIndex].vertices, vertex);
+		let check = isInsidePolygon(polygons[polygonIndex].vertices, vertex);
 		
 		if (check)
 			selected.push(polygons[polygonIndex]);
@@ -843,26 +853,40 @@ function addSelected(selected, vertex)
 
 function inverse(matrix)
 {
-	var a = matrix[0][0];
-	var b = matrix[0][1];
-	var c = matrix[1][0];
-	var d = matrix[1][1];
+	let a = matrix[0][0];
+	let b = matrix[0][1];
+	let c = matrix[1][0];
+	let d = matrix[1][1];
 	
-	var det = determinant(matrix);
+	let det = determinant(matrix);
 	
-	var inv = mat2(d / det, -b / det, -c / det, a / det);
+	let inv = mat2(d / det, -b / det, -c / det, a / det);
 	
 	return inv;
 }
 
 function determinant(matrix)
 {
-	var a = matrix[0][0];
-	var b = matrix[0][1];
-	var c = matrix[1][0];
-	var d = matrix[1][1];
+	let a = matrix[0][0];
+	let b = matrix[0][1];
+	let c = matrix[1][0];
+	let d = matrix[1][1];
 	
-	var det = 1 / (a * d - b * c);
+	let det = (a * d - b * c);
 	
 	return det;
+}
+
+function findSolution(matrix, vector)
+{
+	let m11 = matrix[0][0];
+	let m12 = matrix[0][1];
+	let m21 = matrix[1][0];
+	let m22 = matrix[1][1];
+	
+	let v1 = vector[0];
+	let v2 = vector[1];
+	let solution = vec2( m11 * v1 + m12 * v2, m21 * v1 + m22 * v2);
+	
+	return solution;
 }
