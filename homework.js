@@ -635,7 +635,7 @@ function render() {
 	// Drawing each polygon
 	let startIndex = 0;
     for(let i = 0; i < polygons.length; i++) {
-        gl.drawArrays(gl.TRIANGLE_STRIP, startIndex, polygons[i].vertices.length);
+        gl.drawArrays(gl.LINE_LOOP, startIndex, polygons[i].vertices.length);
 		startIndex += polygons[i].vertices.length;
     }
 }
