@@ -14,7 +14,7 @@ var polygons = [];
 var polygonStart = false;
 var clickPosition = null;
 var mouseHasMoved = false;
-var zoomPosition = vec2(0, 0);
+var zoomPosition = null;
 
 var vertexArray = [];
 var colorArray = [];
@@ -31,15 +31,17 @@ const branchAngle = Math.PI;
 
 var uploadedJson;
 
-var SCALE_CONSTANT = vec3(0.2, 0.2, 0);
+const SCALE_CONSTANT = 1.5;
 var scaleAmount = vec3(1, 1, 0);
 
 var translationAmount = vec3(0, 0, 0);
+let transformationMatrix = mat4();
+var zoomIn = null;
 
 // Careful: This array's first element is always the position where the area selection started
 var copiedPolygons = [];
 
-function getClickPosition(event, offset = vec2(0, 0)) {
+function getClickPosition(event) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
 
@@ -50,7 +52,6 @@ function getClickPosition(event, offset = vec2(0, 0)) {
 	yComponent -= translationAmount[1] / scaleAmount[1];
 
 	let result = vec2(xComponent, yComponent);
-	result = add(result, offset);
 
 	return result;
 }
@@ -360,10 +361,60 @@ function translateSpace(event) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
 
-	translationAmount = add(translationAmount, vec3(positionDiff[0] * scaleAmount[0], positionDiff[1] * scaleAmount[1], 0));
-  
+	let addition = vec3(positionDiff[0] * scaleAmount[0], positionDiff[1] * scaleAmount[1], 0);
+
+	translationAmount = add(translationAmount, addition);
+	
 	render();
 }
+
+function zoom(event)
+{
+	zoomPosition = getClickPosition(event);
+	
+	render();
+	
+	zoomIn = null;
+}
+
+function getTransformationMatrix()
+{
+	let scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
+	//let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+	
+	if (zoomIn !== null)
+	{
+		//let originPlacement = translate(vec3(-translationAmount[0], -translationAmount[1], 0));
+		//console.log("originPlacement: ", originPlacement);
+		let originScale = scale(1 / scaleAmount[0], 1 / scaleAmount[1], 0);
+		console.log("originScale: ", originScale);
+		
+		scaleAmount = zoomIn ? scale2(SCALE_CONSTANT, scaleAmount) : scale2(1 / SCALE_CONSTANT, scaleAmount);
+		//translationAmount = add(translationAmount, vec3(zoomPosition[0], zoomPosition[1], 0));
+		console.log("scaleAmount: ", scaleAmount);
+		//console.log("translationAmount: ", translationAmount);
+		
+		scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
+		//translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+		console.log("scaleMatrix: ", scaleMatrix);
+		//console.log("translationMatrix: ", translationMatrix);
+		
+		//transformationMatrix = mult(translationMatrix, transformationMatrix);
+		transformationMatrix = mult(scaleMatrix, transformationMatrix);
+		transformationMatrix = mult(originScale, transformationMatrix);
+		//transformationMatrix = mult(originPlacement, transformationMatrix);	
+	}
+	
+	else
+	{
+		transformationMatrix = mult(scaleMatrix, transformationMatrix);
+		//transformationMatrix = mult(translationMatrix, transformationMatrix);
+	}
+
+	console.log(transformationMatrix);
+	return transformationMatrix;
+}
+
 
 function copyArea(event) {
 	copiedPolygons = [];
@@ -475,8 +526,8 @@ window.onload = function init() {
 				rotatePolygon(objectToRotated, Math.PI / 4);
 				break;
 			case ZOOM:
-				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
-				render();
+				zoomIn = true;
+				zoom(event);
 				break;
 			case PASTE:
 				pasteSelection(event);
@@ -491,8 +542,8 @@ window.onload = function init() {
 		event.preventDefault();	// Disable right click menu
 		switch (controlIndex) {
 			case ZOOM:
-				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
-				render();
+				zoomIn = false;
+				zoom(event);
 				break;
 			default:
 				break;
@@ -624,12 +675,15 @@ function render() {
 	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
 	let scaleMatrix = scale(scaleAmount);
 	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
-	let transformationMatrix = mult(translationMatrix, scaleMatrix);
+	//let transformationMatrix = mult(translationMatrix, scaleMatrix);
 	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
-	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
+	//gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
 
 	// console.log(zoomPosition);
 
+	let transformationMatrix = getTransformationMatrix();
+	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
+	
 	// Drawing each polygon
 	let startIndex = 0;
     for(var i = 0; i < polygons.length; i++) {
