@@ -255,17 +255,13 @@ function rotatePolygon(polygon, rotationAmount) {
 		xComponent -= center[0];	// Bring the center to the origin
 		yComponent -= center[1];
 
-		console.log(xComponent, yComponent);
+		let newXComponent = -Math.sin(rotationAmount) * yComponent + Math.cos(rotationAmount) * xComponent;	// Rotations around origin
+		let newYComponent = Math.sin(rotationAmount) * xComponent + Math.cos(rotationAmount) * yComponent;
 
-		xComponent = -Math.sin(rotationAmount) * yComponent + Math.cos(rotationAmount) * xComponent;	// Rotations around origin
-		yComponent = Math.sin(rotationAmount) * xComponent + Math.cos(rotationAmount) * yComponent;
+		newXComponent += center[0];	// Take the center back
+		newYComponent += center[1];
 
-		console.log(xComponent, yComponent);
-
-		xComponent += center[0];	// Take the center back
-		yComponent += center[1];
-
-		polygon.vertices[i] = vec2(xComponent, yComponent);
+		polygon.vertices[i] = vec2(newXComponent, newYComponent);
 	}
 
 	calculateEnclosingRectangle(polygon);
