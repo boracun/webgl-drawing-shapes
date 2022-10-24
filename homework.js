@@ -44,10 +44,12 @@ function getClickPosition(event, offset = vec2(0, 0)) {
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
 
 	xComponent /= scaleAmount[0];
-	yComponent /= scaleAmount[0];
+	yComponent /= scaleAmount[1];
+
+	xComponent -= translationAmount[0] / scaleAmount[0];
+	yComponent -= translationAmount[1] / scaleAmount[1];
 
 	let result = vec2(xComponent, yComponent);
-	result = subtract(result, vec2(translationAmount[0], translationAmount[1]));
 	result = add(result, offset);
 
 	return result;
@@ -148,7 +150,7 @@ function addPolygonVertex(event) {
 	//addVertexToBuffer(vertex);
 
 	//console.log(vertex);
-	
+  
 	 // Obtain the vertex
 			
 			// Fill the vertex array		
@@ -176,6 +178,7 @@ function addPolygonVertex(event) {
 			
 			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
 			// Increasing the count of vertices corresponding to the current polygon
+
 			index++;
 			
 			for (var i = 0; i < vertexCount; i++)
@@ -184,7 +187,7 @@ function addPolygonVertex(event) {
 			polygons[polygons.length - 1].vertices = convexVertices;
 			
 			//console.log(vertexArray);
-	 
+  
 	//index++;
 
 	render();
@@ -309,6 +312,9 @@ function loadState(stateJson, refillBuffers = false) {
 	colorArray = currentState.colorArray;
 	polygons = currentState.polygons;
 
+	scaleAmount = vec3(1, 1, 0);
+	translationAmount = vec3(0, 0, 0);
+
 	// Need to clear the buffers and refill them with the new polygons array
 	if (refillBuffers) {
 		index = 0;
@@ -358,7 +364,8 @@ function translateSpace(event) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
 
-	translationAmount = add(translationAmount, vec3(positionDiff[0], positionDiff[1], 0));
+	translationAmount = add(translationAmount, vec3(positionDiff[0] * scaleAmount[0], positionDiff[1] * scaleAmount[1], 0));
+  
 	render();
 }
 
@@ -471,6 +478,10 @@ window.onload = function init() {
 				let objectToRotated = polygons[0];
 				rotatePolygon(objectToRotated, Math.PI / 4);
 				break;
+			case ZOOM:
+				scaleAmount = add(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
 			case PASTE:
 				pasteSelection(event);
 				break;
@@ -483,6 +494,10 @@ window.onload = function init() {
 	canvas.addEventListener("contextmenu", function (event) {
 		event.preventDefault();	// Disable right click menu
 		switch (controlIndex) {
+			case ZOOM:
+				scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
+				render();
+				break;
 			default:
 				break;
 		}
@@ -494,7 +509,7 @@ window.onload = function init() {
 			case DRAW_RECTANGLE:	// Rectangle draw mode
 			case DRAW_TRIANGLE:		// Triangle draw mode
 			case MOVE_OBJECT:		// Start of object movement
-			case ZOOM:				// Start of move-around
+			case MOVE_AROUND:				// Start of move-around
 			case COPY:				// Start of selection area
 				clickPosition = getClickPosition(event);
 				break;
@@ -536,7 +551,7 @@ window.onload = function init() {
 				clickPosition = null;
 				mouseHasMoved = false;
 				break;
-			case ZOOM:
+			case MOVE_AROUND:
 				if (mouseHasMoved)
 					translateSpace(event);
 				clickPosition = null;
@@ -554,14 +569,14 @@ window.onload = function init() {
 		}
 	});
 
-	// Used only for moving an object
+	// Mouse move / drag
 	canvas.addEventListener("mousemove", function(event){
 		switch (controlIndex) {
 			// Detect drag
 			case DRAW_RECTANGLE:
 			case DRAW_TRIANGLE:
 			case MOVE_OBJECT:
-			case ZOOM:
+			case MOVE_AROUND:
 			case COPY:
 				mouseHasMoved = (clickPosition !== null);
 				break;
@@ -569,19 +584,6 @@ window.onload = function init() {
 				break;
 		}
 	});
-
-	document.addEventListener('keydown', function(event) {
-		if (event.keyCode === 37) {
-			scaleAmount = subtract(scaleAmount, SCALE_CONSTANT);
-			// zoomPosition = getClickPosition(event);
-			render();
-		}
-		else if (event.keyCode === 39) {
-			scaleAmount = add(scaleAmount, SCALE_CONSTANT);
-			// zoomPosition = getClickPosition(event);
-			render();
-		}
-	}, true);
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
 	
@@ -634,12 +636,11 @@ function render() {
 
 	// Drawing each polygon
 	let startIndex = 0;
-    for(let i = 0; i < polygons.length; i++) {
-        gl.drawArrays(gl.LINE_LOOP, startIndex, polygons[i].vertices.length);
+    for(var i = 0; i < polygons.length; i++) {
+        gl.drawArrays(gl.TRIANGLE_FAN, startIndex, polygons[i].vertices.length);
 		startIndex += polygons[i].vertices.length;
     }
 }
-
 function createConvexPolygon(vertices)
 {
 	let convexVertices = [];
