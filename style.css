@@ -3,6 +3,10 @@ body {
     user-select: none;
 }
 
+#Controls {
+    overflow: hidden;
+}
+
 #Colors {
     width: 20px;
     overflow: hidden;
