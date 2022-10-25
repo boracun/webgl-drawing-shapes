@@ -315,6 +315,9 @@ function loadState(stateJson, refillBuffers = false) {
 
 	scaleAmount = vec3(1, 1, 0);
 	translationAmount = vec3(0, 0, 0);
+	transformationMatrix = mat4();
+	translation = vec2(0, 0); // current translation amount
+	zoomIn = null;
 
 	// Need to clear the buffers and refill them with the new polygons array
 	if (refillBuffers) {
