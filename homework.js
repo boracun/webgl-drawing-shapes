@@ -465,9 +465,9 @@ window.onload = function init() {
 
 	// Mouse left click
 	canvas.addEventListener("click", function (event) {
+		let vertex = getClickPosition(event);
 		switch (controlIndex) {
 			case REMOVE_OBJECT:
-				var vertex = getClickPosition(event);
 				selected = [];
 				addSelected(selected, vertex);
 				console.log("selected objects:", selected);
@@ -477,8 +477,11 @@ window.onload = function init() {
 				remove(objectToBeDeleted);
 				break;
 			case ROTATE_OBJECT:
-				// TODO: Pass the object to be rotated here (implement here after the object selection method)
-				let objectToRotated = polygons[0];
+				selected = [];
+				addSelected(selected, vertex);
+				console.log("selected objects:", selected);
+
+				let objectToRotated = selected[selected.length - 1];
 				rotatePolygon(objectToRotated, degreesToRadians(rotationDegrees));
 				break;
 			case ZOOM:
