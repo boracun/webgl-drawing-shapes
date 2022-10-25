@@ -249,6 +249,17 @@ function calculateGeometricCenter(polygon) {
 	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
 }
 
+function calculateGeometricCenterOfPolygons(polygonList) {
+	let vectorSum = vec2(0, 0);
+	let vertexCount = polygonList.length;
+
+	for (let i = 0; i < vertexCount; i++) {
+		vectorSum = add(vectorSum, calculateGeometricCenter(polygonList[i]));
+	}
+
+	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
+}
+
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
 function rotatePolygon(polygon, rotationAmount) {
 	let center = calculateGeometricCenter(polygon);
@@ -445,6 +456,8 @@ function copyArea(event) {
 		if (isInsideArea(polygons[i], bottomLeft, topRight))
 			copiedPolygons.push(polygons[i]);
 	}
+
+	copiedPolygons[0] = calculateGeometricCenterOfPolygons(copiedPolygons.slice(1));
 }
 
 function pasteSelection(event) {
