@@ -249,6 +249,17 @@ function calculateGeometricCenter(polygon) {
 	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
 }
 
+function calculateGeometricCenterOfVertices(vertexList) {
+	let vectorSum = vec2(0, 0);
+	let vertexCount = vertexList.length;
+
+	for (let i = 0; i < vertexCount; i++) {
+		vectorSum = add(vectorSum, vertexList[i]);
+	}
+
+	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
+}
+
 function calculateGeometricCenterOfPolygons(polygonList) {
 	let vectorSum = vec2(0, 0);
 	let vertexCount = polygonList.length;
