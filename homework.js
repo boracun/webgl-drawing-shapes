@@ -16,6 +16,8 @@ var clickPosition = null;
 var mouseHasMoved = false;
 var zoomPosition = vec2(0, 0);
 
+var rotationDegrees = 0;
+
 var vertexArray = [];
 var colorArray = [];
 
@@ -443,6 +445,11 @@ window.onload = function init() {
 		completePolygon();
     });
 
+	const rotationInputElement = document.getElementById("rotation-input")
+	rotationInputElement.addEventListener("change", function(){
+		rotationDegrees = rotationInputElement.value;
+	});
+
 	// The element used for uploading the json files
 	const fileInputElement = document.getElementById("file-input");
 	fileInputElement.addEventListener("change", function () {
@@ -472,7 +479,7 @@ window.onload = function init() {
 			case ROTATE_OBJECT:
 				// TODO: Pass the object to be rotated here (implement here after the object selection method)
 				let objectToRotated = polygons[0];
-				rotatePolygon(objectToRotated, Math.PI / 4);
+				rotatePolygon(objectToRotated, degreesToRadians(rotationDegrees));
 				break;
 			case ZOOM:
 				scaleAmount = add(scaleAmount, SCALE_CONSTANT);

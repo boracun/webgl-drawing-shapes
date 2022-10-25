@@ -91,6 +91,10 @@ function isInsideArea(polygon, areaBottomLeft, areaTopRight) {
     return true;
 }
 
+function degreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
 const DRAW_RECTANGLE = 0;
 const DRAW_TRIANGLE = 1;
 const CREATE_POLYGON = 2;
