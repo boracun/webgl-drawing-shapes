@@ -134,21 +134,27 @@ function completePolygon() {
 }
 
 function addPolygonVertex(event) {
-	var vertex;
-
+	var vertex = getClickPosition(event);
+	let geoCenter;
 	// If only the first vertex of the polygon/shape is determined
 	if (!polygonStart) {
 		polygons.push(new Polygon([], vec4(colors[colorIndex])));
 		polygonStart = true;
-
 		getUniqueColor();
+		
+		geoCenter = vertex;
+		polygons[polygons.length - 1].addVertex(vertex);
+		addColorToBuffer(polygons[polygons.length - 1].color);
+		vertexArray[index] = vertex;
+		index++;
+		console.log(index, vertexArray);
+		
 	}
-
 	// Bind the color buffer to send color data to GPU
 	addColorToBuffer(polygons[polygons.length - 1].color);
 
 	// Obtain the vertex
-	vertex = getClickPosition(event);
+	//vertex = getClickPosition(event);
 	polygons[polygons.length - 1].addVertex(vertex);
 
 	// Bind the vertex buffer to send vertex data to GPU
@@ -157,45 +163,63 @@ function addPolygonVertex(event) {
 	//console.log(vertex);
   
 	 // Obtain the vertex
+	console.log(index, vertexArray);		
+	// Fill the vertex array		
+	vertexArray[index] = vertex;
+	// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
+	// Discards the first element
+	var startIndex = vertexArray.length - polygons[polygons.length - 1].vertices.length + 1;
+	var endIndex = index + 1; // do not include
+	var vertexCount = polygons[polygons.length - 1].vertices.length;			
 			
-			// Fill the vertex array		
-			vertexArray[index] = vertex;
+	var deepCopyVertexArray = [];
+	for ( var i = startIndex; i < endIndex; i++)
+		deepCopyVertexArray[i - startIndex] = vertexArray[i];
 			
-			// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
-			var startIndex = vertexArray.length - polygons[polygons.length - 1].vertices.length;
-			var endIndex = index + 1; // do not include
-			var vertexCount = polygons[polygons.length - 1].vertices.length;			
-			
-			var deepCopyVertexArray = [];
-			for ( var i = startIndex; i < endIndex; i++)
-				deepCopyVertexArray[i - startIndex] = vertexArray[i];
-			
-			// Obtain the convex polygon with given vertices
-			var convexVertices = createConvexPolygon(deepCopyVertexArray);
-			
-			// Bind the vertex buffer to send the corrected vertices data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-			
-			for ( var count = 0; count < vertexCount; count++ )
-			{
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(convexVertices[count]));
-			}
-			
-			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
-			// Increasing the count of vertices corresponding to the current polygon
+	// Obtain the convex polygon with given vertices
+	var convexVertices = createConvexPolygon(deepCopyVertexArray);
+	
+	// REARRANGE OTHER VERTICES
+	index++;
+	
+	for (var i = 1; i < vertexCount; i++)
+		vertexArray[index - vertexCount + i] = convexVertices[i];
+	
+	// Obtain the geometric center (DISCARD THE FIRST ELEMENT)
+	console.log(index, vertexArray);
+	if (index > 2)
+		geoCenter = calculateGeometricCenterOfVertices(vertexArray.slice(1));
+	vertexArray[0] = geoCenter;
+	
+	polygons[polygons.length - 1].vertices = vertexArray;
 
-			index++;
+	// Bind the vertex buffer to send the corrected vertices data to GPU
+	gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
 			
-			for (var i = 0; i < vertexCount; i++)
-				vertexArray[index - vertexCount + i] = convexVertices[i];
-			
-			polygons[polygons.length - 1].vertices = convexVertices;
-			
-			//console.log(vertexArray);
+	for ( var count = 0; count < vertexCount; count++ )
+	{
+		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(vertexArray[count]));
+	}
+	
+	//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
+	// Increasing the count of vertices corresponding to the current polygon
+		
+	console.log("VERTEX ARRAY: ", vertexArray);
   
 	//index++;
 
 	render();
+}
+
+function calculateGeometricCenterOfVertices(vertexList) {
+	let vectorSum = vec2(0, 0);
+	let vertexCount = vertexList.length;
+
+	for (let i = 0; i < vertexCount; i++) {
+		vectorSum = add(vectorSum, vertexList[i]);
+	}
+
+	return vec2(vectorSum[0] / vertexCount, vectorSum[1] / vertexCount);
 }
 
 // Careful: The polygon passed must be referring to the polygons array element since the comparison is done with ==
@@ -470,6 +494,8 @@ window.onload = function init() {
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
     
+	gl.enable(gl.STENCIL_TEST);
+
 	// Control and color menus
 	var controlMenu = document.getElementById("Controls");
 	var colorMenu = document.getElementById("Colors");
