@@ -1,15 +1,49 @@
 body {
     margin: 0px;
     user-select: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+#gl-canvas {
+    width: 512px;
+    height: 512px;
+}
+
+#controls-colors {
+    margin-top: 10%;
 }
 
 #Controls {
     overflow: hidden;
+    height: fit-content;
 }
 
 #Colors {
     width: 20px;
     overflow: hidden;
+    height: fit-content;
+}
+
+#download-button {
+    visibility: hidden;
+}
+
+#right-panel {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    height: 200px;
+    justify-content: space-between;
+    margin-top: 10%;
+    margin-left: 10px;
+    border: solid darkblue;
+    border-radius: 5%;
+}
+
+#end-polygon-button, #rotation-input {
+    width: 45%;
 }
 
 #black-option {

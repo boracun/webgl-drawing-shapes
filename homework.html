@@ -42,43 +42,51 @@
 		Sorry, your web browser does not support HTML5's canvas element.
 	</canvas>
 
-	<!-- Control menu -->
-	<select id="Controls" size="14">
-		<option value="0">Draw Rectangle</option>
-		<option value="1">Draw Triangle</option>
-		<option value="2">Create Polygon</option>
-		<option value="3">Move Object</option>
-		<option value="4">Remove Object</option>
-		<option value="5">Rotate Object</option>
-		<option value="6">Undo</option>
-		<option value="7">Redo</option>
-		<option value="8">Zoom in/out</option>
-		<option value="9">Move Around</option>
-		<option value="10">Save Scene</option>
-		<option value="11">Load Scene</option>
-		<option value="12">Copy Selection</option>
-		<option value="13">Paste Selection</option>
-	</select>
+	<div id="controls-colors">
+		<!-- Control menu -->
+		<select id="Controls" size="14">
+			<option value="0">Draw Rectangle</option>
+			<option value="1">Draw Triangle</option>
+			<option value="2">Create Polygon</option>
+			<option value="3">Move Object</option>
+			<option value="4">Remove Object</option>
+			<option value="5">Rotate Object</option>
+			<option value="6">Undo</option>
+			<option value="7">Redo</option>
+			<option value="8">Zoom in/out</option>
+			<option value="9">Move Around</option>
+			<option value="10">Save Scene</option>
+			<option value="11">Load Scene</option>
+			<option value="12">Copy Selection</option>
+			<option value="13">Paste Selection</option>
+		</select>
 
-	<!-- Color menu -->
-	<select id="Colors" size="8">
-		<option id="black-option" value="0"></option>
-		<option id="red-option" value="1"></option>
-		<option id="yellow-option" value="2"></option>
-		<option id="green-option" value="3"></option>
-		<option id="cyan-option" value="4"></option>
-		<option id="blue-option" value="5"></option>
-		<option id="magenta-option" value="6"></option>
-		<option id="white-option" value="7"></option>
-	</select>
-	<button id = "end-polygon-button">End Polygon</button>
+		<!-- Color menu -->
+		<select id="Colors" size="8">
+			<option id="black-option" value="0"></option>
+			<option id="red-option" value="1"></option>
+			<option id="yellow-option" value="2"></option>
+			<option id="green-option" value="3"></option>
+			<option id="cyan-option" value="4"></option>
+			<option id="blue-option" value="5"></option>
+			<option id="magenta-option" value="6"></option>
+			<option id="white-option" value="7"></option>
+		</select>
+	</div>
 
-	<label for="rotation-input">Rotation Degree: </label><input id="rotation-input" type="number" />
+	<div id="right-panel">
+		<button id = "end-polygon-button">End Polygon</button>
+
+		<div id="rotation-div">
+			<label for="rotation-input">Rotation Degree: </label>
+			<input id="rotation-input" type="number" />
+		</div>
+
+		<input id="file-input" type="file" />
+	</div>
 
 	<a id="download-link">
 		<button id="download-button">Download Scene</button>
 	</a>
-
-	<input id="file-input" type="file" />
 </body>
 </html>
