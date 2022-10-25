@@ -1,9 +1,14 @@
 body {
     margin: 0px;
     user-select: none;
+    font-family: 'Poppins', sans-serif;
+}
+
+#operations {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
+    height: 512px;
 }
 
 #gl-canvas {
@@ -13,17 +18,24 @@ body {
 
 #controls-colors {
     margin-top: 10%;
+    margin-left: 10px;
+    height: 512px;
 }
 
 #Controls {
     overflow: hidden;
     height: fit-content;
+    font-family: 'Poppins', sans-serif;
 }
 
 #Colors {
     width: 20px;
     overflow: hidden;
     height: fit-content;
+}
+
+#instruction-div {
+    margin-left: 10px;
 }
 
 #download-button {
@@ -44,6 +56,11 @@ body {
 
 #end-polygon-button, #rotation-input {
     width: 45%;
+    font-family: 'Poppins', sans-serif;
+}
+
+#file-input {
+    font-family: 'Poppins', sans-serif;
 }
 
 #black-option {
