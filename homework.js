@@ -45,13 +45,14 @@ function getClickPosition(event) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
 
-	xComponent *= scaleAmount[0];
-	yComponent *= scaleAmount[1];
+	xComponent /= scaleAmount[0];
+	yComponent /= scaleAmount[1];
 
-	xComponent += translationAmount[0];
-	yComponent += translationAmount[1];
+	xComponent -= translationAmount[0] / scaleAmount[0];
+	yComponent -= translationAmount[1] / scaleAmount[1];
 
 	let result = vec2(xComponent, yComponent);
+	console.log("clickPosition: ", result);
 
 	return result;
 }
@@ -361,7 +362,7 @@ function translateSpace(event) {
 	let position2 = getClickPosition(event);
 	let positionDiff = subtract(position2, clickPosition);
 
-	translation = vec3(positionDiff[0] / scaleAmount[0], positionDiff[1] / scaleAmount[1], 0 );
+	translation = vec3(positionDiff[0] * scaleAmount[0], positionDiff[1] * scaleAmount[0], 0 );
 	console.log("translationAmount before: ", translationAmount);
 	console.log("translation: ", translation);
 	//translationAmount = add(translationAmount, addition);
@@ -371,10 +372,11 @@ function translateSpace(event) {
 
 function zoom(event)
 {
-	translation = getClickPosition(event);
-	
 	if ( zoomIn )
-		translation = scale2(-2/scaleAmount[0], translation);
+	{
+		//translation = getClickPosition(event);
+		//translation = scale2(-1, translation);
+	}
 	console.log("translation: ", translation);
 	
 	render();
@@ -390,28 +392,28 @@ function getTransformationMatrix()
 	console.log("translationMatrix before change: ", translationMatrix);
 
 
-		let originPlacement = translate(vec3(-translationAmount[0], -translationAmount[1], 0));
-		console.log("originPlacement: ", originPlacement);
-		let originScale = scale(1 / scaleAmount[0], 1 / scaleAmount[1], 0);
-		console.log("originScale: ", originScale);
+	let originPlacement = translate(vec3(-translationAmount[0], -translationAmount[1], 0));
+	console.log("originPlacement: ", originPlacement);
+	let originScale = scale(1 / scaleAmount[0], 1 / scaleAmount[1], 0);
+	console.log("originScale: ", originScale);
 		
-		if (zoomIn !== null)
-			scaleAmount = zoomIn ? scale2(SCALE_CONSTANT, scaleAmount) : scale2(1 / SCALE_CONSTANT, scaleAmount);
+	if (zoomIn !== null)
+		scaleAmount = zoomIn ? scale2(SCALE_CONSTANT, scaleAmount) : scale2(1 / SCALE_CONSTANT, scaleAmount);
 		
-		translationAmount = add(translationAmount, vec3(translation[0], translation[1], 0));
-		console.log("scaleAmount: ", scaleAmount);
-		console.log("translationAmount: ", translationAmount);
+	translationAmount = add(translationAmount, vec3(translation[0], translation[1], 0));
+	console.log("scaleAmount: ", scaleAmount);
+	console.log("translationAmount: ", translationAmount);
 		
-		scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
-		translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
-		console.log("scaleMatrix: ", scaleMatrix);
-		console.log("translationMatrix: ", translationMatrix);
+	scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
+	translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
+	console.log("scaleMatrix: ", scaleMatrix);
+	console.log("translationMatrix: ", translationMatrix);
 		
-		transformationMatrix = mult(originPlacement, transformationMatrix);
-		transformationMatrix = mult(originScale, transformationMatrix);	
-		transformationMatrix = mult(scaleMatrix, transformationMatrix);
-		transformationMatrix = mult(translationMatrix, transformationMatrix);
-			
+	transformationMatrix = mult(originPlacement, transformationMatrix);
+	transformationMatrix = mult(originScale, transformationMatrix);
+	transformationMatrix = mult(scaleMatrix, transformationMatrix);
+	transformationMatrix = mult(translationMatrix, transformationMatrix);
+					
 
 	console.log("Final transformationMatrix: ", transformationMatrix);
 	zoomIn = null;
