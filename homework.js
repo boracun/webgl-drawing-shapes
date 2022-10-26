@@ -721,16 +721,6 @@ function render() {
     // Clear the canvas (with grey) to redraw everything
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-	// let translationMatrix = translate(-zoomPosition[0], -zoomPosition[1], 0);
-	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
-	let scaleMatrix = scale(scaleAmount);
-	// let inverseTranslationMatrix = translate(vec3(zoomPosition, 0));
-	//let transformationMatrix = mult(translationMatrix, scaleMatrix);
-	// transformationMatrix = mult(inverseTranslationMatrix, transformationMatrix);
-	//gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
-
-	// console.log(zoomPosition);
-
 	let transformationMatrix = getTransformationMatrix();
 	gl.uniformMatrix4fv(transformationMatrixLocation, false, flatten(transformationMatrix));
 	
