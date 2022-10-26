@@ -46,7 +46,6 @@ var copiedPolygons = [];
 function getClickPosition(event) {
 	let xComponent = 2 * event.clientX / canvas.width - 1;
 	let yComponent = 2 * (canvas.height - event.clientY) / canvas.height - 1;
-	console.log(xComponent, yComponent);
 
 	xComponent /= scaleAmount[0];
 	yComponent /= scaleAmount[1];
@@ -55,7 +54,6 @@ function getClickPosition(event) {
 	yComponent -= translationAmount[1];
 
 	let result = vec2(xComponent, yComponent);
-	console.log("clickPosition: ", result);
 
 	return result;
 }
@@ -151,49 +149,36 @@ function addPolygonVertex(event) {
 	vertex = getClickPosition(event);
 	polygons[polygons.length - 1].addVertex(vertex);
 
-	// Bind the vertex buffer to send vertex data to GPU
-	//addVertexToBuffer(vertex);
-
-	//console.log(vertex);
-  
-	 // Obtain the vertex
+	// Fill the vertex array		
+	vertexArray[index] = vertex;
 			
-			// Fill the vertex array		
-			vertexArray[index] = vertex;
+	// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
+	var startIndex = vertexArray.length - polygons[polygons.length - 1].vertices.length;
+	var endIndex = index + 1; // do not include
+	var vertexCount = polygons[polygons.length - 1].vertices.length;			
 			
-			// Obtain the starting and ending vertices, and the vertex count to create a convex polygon
-			var startIndex = vertexArray.length - polygons[polygons.length - 1].vertices.length;
-			var endIndex = index + 1; // do not include
-			var vertexCount = polygons[polygons.length - 1].vertices.length;			
+	var deepCopyVertexArray = [];
+	for ( var i = startIndex; i < endIndex; i++)
+		deepCopyVertexArray[i - startIndex] = vertexArray[i];
 			
-			var deepCopyVertexArray = [];
-			for ( var i = startIndex; i < endIndex; i++)
-				deepCopyVertexArray[i - startIndex] = vertexArray[i];
+	// Obtain the convex polygon with given vertices
+	var convexVertices = createConvexPolygon(deepCopyVertexArray);
 			
-			// Obtain the convex polygon with given vertices
-			var convexVertices = createConvexPolygon(deepCopyVertexArray);
+	// Bind the vertex buffer to send the corrected vertices data to GPU
+	gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
 			
-			// Bind the vertex buffer to send the corrected vertices data to GPU
-			gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+	for ( var count = 0; count < vertexCount; count++ )
+	{
+		gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(convexVertices[count]));
+	}
+	
+	// Increasing the count of vertices corresponding to the current polygon
+	index++;
 			
-			for ( var count = 0; count < vertexCount; count++ )
-			{
-				gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index - vertexCount + count + 1), flatten(convexVertices[count]));
-			}
+	for (var i = 0; i < vertexCount; i++)
+		vertexArray[index - vertexCount + i] = convexVertices[i];
 			
-			//gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(t));
-			// Increasing the count of vertices corresponding to the current polygon
-
-			index++;
-			
-			for (var i = 0; i < vertexCount; i++)
-				vertexArray[index - vertexCount + i] = convexVertices[i];
-			
-			polygons[polygons.length - 1].vertices = convexVertices;
-			
-			//console.log(vertexArray);
-  
-	//index++;
+	polygons[polygons.length - 1].vertices = convexVertices;
 
 	render();
 }
@@ -392,10 +377,6 @@ function translateSpace(event) {
 	let positionDiff = subtract(position2, clickPosition);
 
 	translation = vec3(positionDiff[0], positionDiff[1], 0 );
-	console.log("translationAmount before: ", translationAmount);
-	console.log("translation: ", translation);
-	//translationAmount = add(translationAmount, addition);
-	//console.log("translationAmount after: ", translationAmount);
 	render();
 }
 
@@ -406,7 +387,6 @@ function zoom(event)
 		translation = getClickPosition(event);
 		translation = scale2(-1, translation);
 	}
-	console.log("translation: ", translation);
 	
 	render();
 	
@@ -417,14 +397,9 @@ function getTransformationMatrix()
 {
 	let scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
 	let translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
-	console.log("scaleMatrix before change: ", scaleMatrix);
-	console.log("translationMatrix before change: ", translationMatrix);
-
 
 	let originPlacement = translate(vec3(-translationAmount[0], -translationAmount[1], 0));
-	console.log("originPlacement: ", originPlacement);
 	let originScale = scale(1 / scaleAmount[0], 1 / scaleAmount[1], 0);
-	console.log("originScale: ", originScale);
 		
 	if (zoomIn !== null)
 	{
@@ -434,22 +409,15 @@ function getTransformationMatrix()
 	}
 	else
 		translationAmount = add(translationAmount, vec3(translation[0], translation[1], 0));
-	
-	
-	console.log("scaleAmount: ", scaleAmount);
-	console.log("translationAmount: ", translationAmount);
 		
 	scaleMatrix = scale(scaleAmount[0], scaleAmount[1], 0);
 	translationMatrix = translate(translationAmount[0], translationAmount[1], 0);
-	console.log("scaleMatrix: ", scaleMatrix);
-	console.log("translationMatrix: ", translationMatrix);
 	
 	transformationMatrix = mult(originScale, transformationMatrix);
 	transformationMatrix = mult(originPlacement, transformationMatrix);
 	transformationMatrix = mult(translationMatrix, transformationMatrix);
 	transformationMatrix = mult(scaleMatrix, transformationMatrix);			
 
-	console.log("Final transformationMatrix: ", transformationMatrix);
 	zoomIn = null;
 	translation = vec2(0 ,0);
 	return transformationMatrix;
@@ -561,17 +529,13 @@ window.onload = function init() {
 			case REMOVE_OBJECT:
 				selected = [];
 				addSelected(selected, vertex);
-				console.log("selected objects:", selected);
 				
 				let objectToBeDeleted = selected[selected.length - 1];
-				console.log("top object in selected:", selected[selected.length - 1]);
 				remove(objectToBeDeleted);
 				break;
 			case ROTATE_OBJECT:
 				selected = [];
 				addSelected(selected, vertex);
-				console.log("selected objects:", selected);
-
 				let objectToRotated = selected[selected.length - 1];
 				rotatePolygon(objectToRotated, degreesToRadians(rotationDegrees));
 				break;
@@ -638,7 +602,6 @@ window.onload = function init() {
 					var vertex = clickPosition;
 					selected = [];
 					addSelected(selected, vertex);
-					console.log("selected objects:", selected);
 
 					if(selected.length > 0) {
 						let objectToBeTranslated = selected[selected.length - 1];
@@ -659,7 +622,6 @@ window.onload = function init() {
 					copyArea(event);
 				clickPosition = null;
 				mouseHasMoved = false;
-				console.log(copiedPolygons);
 				break;
 			default:
 				break;
@@ -738,7 +700,6 @@ function createConvexPolygon(vertices)
 	
 	if (length > 3)
 	{
-		console.log(vertices);
 		let lastPoint = vertices[length - 1];
 		
 		// Coordinates of the last point
@@ -754,9 +715,7 @@ function createConvexPolygon(vertices)
 			let P1 = vertices[i];
 			let P2 = vertices[i+1];
 			
-			/////////
 			let minimumDistance = obtainMinimumDistance(P1, P2, x, y);
-			
 			distances[i] = minimumDistance;
 		}
 		
@@ -811,9 +770,7 @@ function createConvexPolygon(vertices)
 			
 			for ( let currentIndex = minIndex + 1; currentIndex < length - 1; currentIndex++)
 				convexVertices[currentIndex + 1] = vertices[currentIndex];
-			
 		}
-		console.log(convexVertices);
 	}
 	
 	else
@@ -822,7 +779,6 @@ function createConvexPolygon(vertices)
 			convexVertices[currentIndex] = vertices[currentIndex];
 	}
 	
-	//console.log(convexVertices);
 	return convexVertices;
 }
 
@@ -887,7 +843,6 @@ function isInsidePolygon(polyVertices, vertex)
 	let sumReal = 0;
 	let sumImag = 0;
 	let sum = 0;
-	console.log(vertex);
 	for (let i = 1; i < polyVertices.length + 1; i++)
 	{
 		let v0 = polyVertices[i - 1];
