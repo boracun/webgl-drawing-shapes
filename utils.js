@@ -95,6 +95,74 @@ function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
 
+function getRadiansBetweenThreePoints(first, second, third) {
+    let vectorOne = subtract(first, second);
+    let vectorTwo = subtract(third, second);
+
+    // atan2 gets the angle between vector and positive x-axis
+    // Careful: atan2 function takes parameters as (y, x)
+    let radians1 = Math.atan2(vectorOne[1], vectorOne[0]);
+    let radians2 = Math.atan2(vectorTwo[1], vectorTwo[0]);
+
+    if (radians1 < 0)
+        radians1 += 2 * Math.PI;
+
+    if (radians2 < 0)
+        radians2 += 2 * Math.PI;
+
+    return (radians1 - radians2); // * 180 / Math.PI;
+}
+
+// console.log(getRadiansBetweenThreePoints(vec2(0, 0), vec2(4, 1), vec2(5, 5)));
+
+function checkPositiveAngle(first, second, third) {
+    let radians = getRadiansBetweenThreePoints(first, second, third);
+    return radians >= 0 && radians < Math.PI;
+}
+
+function getConvexHull(vertexList) {
+    let convexHullIndices = [];
+
+    // Find the left-most point as the starting point
+    let leftMostVertex = vertexList.reduce(function (prev, cur) {
+       return prev[0] < cur[0] ? prev : cur;
+    });
+
+    let leftMostIndex = vertexList.indexOf(leftMostVertex);
+
+    let p = leftMostIndex;
+    let q = (leftMostIndex + 1) % vertexList.length;
+
+    // We want the full circle
+    do {
+        for (let i = 0; i < vertexList.length; i++) {
+            if (i === q && i === vertexList.length - 1) {
+                convexHullIndices.push(q);
+                p = q;
+                q = (q + 1) % vertexList.length;
+                continue;
+            }
+            if (i === q)
+                continue;
+            if (!checkPositiveAngle(vertexList[p], vertexList[q], vertexList[i])) {
+                q = (q + 1) % vertexList.length;
+                break;
+            }
+            if (i === vertexList.length - 1) {
+                convexHullIndices.push(q);
+                p = q;
+                q = (q + 1) % vertexList.length;
+            }
+        }
+    } while (!convexHullIndices.includes(leftMostIndex));
+
+    return convexHullIndices.map(function (element) {
+        return vertexList[element];
+    });
+}
+
+// console.log(getConvexHull([vec2(0, 0), vec2(4, 1), vec2(8, 2), vec2(5, 5), vec2(3, 7)]));
+
 const DRAW_RECTANGLE = 0;
 const DRAW_TRIANGLE = 1;
 const CREATE_POLYGON = 2;
